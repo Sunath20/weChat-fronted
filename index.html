@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="./css/components/notification.css">
+    <link rel="stylesheet" href="./css/style.css">
+    <link rel="stylesheet" href="./css/lib/uikit.min.css">
+    <!-- <link rel="stylesheet" href="./css/"> -->
+    
+
+</head>
+<body>
+    
+    <!-- <input type="text" class="from">
+    <input type="text" class="to">
+    <input type="text" class="msg">
+
+    <button class="send">Send</button>
+    <button class="register">Register</button>
+    <button class="createRoom">Create the Room</button> -->
+
+
+    <!-- <button class="reconnect">Reconnect</button> -->
+
+    <!-- <div class="messages">
+
+    </div> -->
+
+    <div class="friends">
+        <div class="search-bar">
+            
+            <div class="menu-bar pointer">
+                <a uk-icon="table" class="uk-icon-button"></a>
+            </div>
+
+            <div class="search-input">
+                
+                 <form class="uk-search uk-search-default">
+                     <input class="uk-search-input" type="search" placeholder="Search" aria-label="Search">
+                    <span class="uk-search-icon-flip" uk-search-icon></span>
+                 </form>
+
+            </div>
+
+            <div class="add-contact pointer">
+            <a uk-icon="plus" class="uk-icon-button " uk-toggle href="#add-new-profile"></a>
+            </div>
+
+        </div>
+
+        <div class="friend-list">
+        
+        </div>
+
+    </div>
+    
+    <div class="chat">
+        
+        <div class="contact-info">
+            
+            <div class="photo">
+                <img src="./img/userDefault.png" alt="">
+            </div>
+
+            <div class="text-info">
+                <span>Lol44lol</span>
+                <br>
+                <span>Last seen : 14:04 today</span>
+            </div>
+
+            <div class="action-info">
+                
+                <ul class="uk-iconnav">
+                    <li><a href="#" uk-icon="icon:  video-camera"></a></li>
+                    <li><a href="#" uk-icon="icon: receiver"></a></li>
+                    <li><a href="#"><span uk-icon="icon:  more-vertical"></span> (2)</a></li>
+                </ul>
+
+            </div>
+
+        </div>
+
+
+        <div class="chat-info">
+        </div>
+        
+        <div class="input-info">
+            
+            <div class="file-input">
+
+            <ul class="uk-iconnav file-actions">
+                <li><a href="#" uk-icon="icon: plus"></a></li>
+                <li><a href="#" uk-icon="icon: file-edit"></a></li>
+            </ul>
+
+            </div>
+
+            <div class="text-input">
+                <input type="text" class="send-message-input" placeholder="Send Something">
+            </div>
+
+            <div class="send-button">
+                <button class="uk-button uk-button-primary send-message-action" scale=".1">Send</button>
+            </div>
+
+        </div>
+
+
+    </div>
+
+
+<div id="add-new-profile" uk-modal>
+    <div class="uk-modal-dialog uk-modal-body">
+        
+        <form class="uk-form-stacked">
+
+            <div class="uk-margin">
+                <label class="uk-form-label" for="form-stacked-text">Contact Name</label>
+                <div class="uk-form-controls">
+                    <input class="uk-input add-new-profile-name" id="form-stacked-text" type="text" placeholder="John">
+                </div>
+            </div>
+
+            
+            <div class="uk-margin">
+                <label class="uk-form-label" for="form-stacked-text">Contact Phone Number</label>
+                <div class="uk-form-controls">
+                    <input class="uk-input add-new-profile-contact" id="form-stacked-text" type="text" placeholder="+9483920932">
+                </div>
+            </div>
+
+        </form>
+        
+        <div class="add-new-profile-actions">
+             <button class="uk-modal-close uk-button uk-button-danger" type="button">Exit</button>
+             <button class="uk-modal-close uk-button uk-button-primary save-new-profile-button" type="button">Save</button>
+        </div>
+      
+    </div>
+</div>
+
+
+
+    <script src="./js/lib/uikit.min.js"></script>
+    <script src="./js/lib/uikit-icons.min.js"></script>
+    <!-- <script src="https://kit.fontawesome.com/b8b79f3a7b.js" crossorigin="anonymous"></script> -->
+     <script src="./js/utils.js" type="module"></script>
+    <script src="./js/handlers/requestHandling.js" type="module"></script>
+        <script src="./js/handlers/chatHandler.js" type="module"></script>
+    <script src="./js/index.js" type="module"></script>
+
+    <script>
+        document.querySelector("body").style.height = window.innerHeight + "px";
+    </script>
+</body>
+</html>

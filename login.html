@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SignUp</title>
+
+        <link rel="stylesheet" href="./css/uikit.min.css">
+        <link rel="stylesheet" href="./css/login.css">
+
+</head>
+<body>
+    
+    <div class="sign-up">
+
+        <div class="logo">
+            <img src="./img/logo-high-no-background.png" alt="">
+        </div>
+        
+        <div class="fields sign-up-fields hide">
+        
+            <div class="field">
+
+                <h5 class="input-field-text">First Name</h5>
+                <div>
+                         <input save-as="firstName" autocomplete="given-name" class="uk-input uk-form-width-large" saveAs="firstName" type="text" placeholder="First Name" aria-label="Large">
+                </div>
+        </div>
+        
+        <div class="field">
+
+                <h5 class="input-field-text">Last Name</h5>
+                <div>
+                         <input save-as="lastName" autocomplete="family-name" class="uk-input uk-form-width-large" type="text" placeholder="Last Name" aria-label="Large">
+                </div>
+        </div>
+
+        <div class="field">
+
+                <h5 class="input-field-text">Email</h5>
+                <div>
+                         <input save-as="email" autocomplete="email" class="uk-input uk-form-width-large" type="text" placeholder="Email Address" aria-label="Large">
+                </div>
+        </div>
+
+
+        <div class="field">
+
+                <h5 class="input-field-text">Contact Number</h5>
+                <div>
+                         <input save-as="contactNumber" autocomplete="tel" class="uk-input uk-form-width-large" type="text" placeholder="Password Again" aria-label="Large">
+                </div>
+        </div>
+
+
+        <div class="field">
+
+                <h5 class="input-field-text">Birthday</h5>
+                <div>
+                         <input save-as="birthday" autocomplete="bday" class="uk-input uk-form-width-large" type="date" placeholder="Password Again" aria-label="Large">
+                </div>
+        </div>
+        
+        </div>
+
+
+        <div class="actions sign-up-actions hide">
+            <button class="uk-button uk-button-danger switch-to-sign-in-action">Log In</button>
+            <button class="uk-button uk-button-primary sign-up-action">Sign Up</button>
+        </div>
+
+
+         <div class="fields sign-in-fields">
+            <div class="field">
+
+                <h5 class="input-field-text">Contact Number</h5>
+                <div>
+                         <input autocomplete="tel" class="uk-input uk-form-width-large login-contact-number" type="text" placeholder="Contact Number" aria-label="Large">
+                </div>
+        </div>
+        
+        </div>
+
+         <div class="actions sign-in-actions">
+            <button class="uk-button uk-button-danger switch-to-sign-up-action">Sign Up</button>
+            <button class="uk-button uk-button-primary">Login</button>
+        </div>
+
+    </div>
+
+
+    <div class="otp-validation hide">
+
+              
+        <div class="logo">
+            <img src="./img/logo-high-no-background.png" alt="">
+        </div>
+
+        <div class="info">
+            <h3>Opt Has been sent your phone</h3>
+        </div>
+        
+        <div class="fields otp-fields">
+            
+            <div class="field">
+
+                <div class="field-otp-input">
+                         <input class="uk-input uk-form-width-large otp-validator" otp-number="1" type="text">
+                </div>
+
+            </div>
+
+             <div class="field">
+
+                <div class="field-otp-input">
+                         <input otp-number="2" class="uk-input uk-form-width-large otp-validator" saveAs="firstName" type="text">
+                </div>
+
+            </div>
+
+             <div class="field">
+
+                <div class="field-otp-input">
+                         <input otp-number="3" class="uk-input otp-validator uk-form-width-large" saveAs="firstName" type="text">
+                </div>
+
+            </div>
+
+             <div class="field">
+
+                <div class="field-otp-input">
+                         <input otp-number="4" class="uk-input otp-validator uk-form-width-large" saveAs="firstName" type="text">
+                </div>
+
+            </div>
+
+             <div class="field">
+
+                <div class="field-otp-input">
+                         <input otp-number="5" class="uk-input otp-validator uk-form-width-large" saveAs="firstName" type="text">
+                </div>
+
+            </div>
+
+             <div class="field">
+
+                <div class="field-otp-input">
+                         <input otp-number="6" class="uk-input otp-validator uk-form-width-large" saveAs="firstName" type="text">
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <a href="#" id="redirectPage"></a>
+
+    
+    <script src="./js/uikit.min.js"></script>
+    <script src="./js/uikit-icons.min.js"></script>
+    <script type="module" src="./js/requestHandling.js"></script>
+    <script src="./js/login.js" type="module"></script>
+
+</body>
+</html>
