@@ -2,12 +2,15 @@
 // Import handlers
 import { ChatHandler } from "./handlers/chatHandler.js"
 import { ClickHandler } from "./handlers/clickHandler.js"
+import { DataHandler } from "./handlers/dataHandler.js"
+import { DateHandler } from "./handlers/dateHandler.js"
 import {KeyBoardHandler} from "./handlers/keyboardHandler.js"
 import { Notification, setNotificationsToZero } from "./handlers/notification.js"
 import {WebSocketHandler,MessageHandler, MAIN_HANDLERS,APIHandler} from "./handlers/requestHandling.js"
 import {VisualHandler} from "./handlers/visualHandler.js"
+import { DatabaseMessageModel, DataHandlerMessageModel } from "./models.js"
 
-import { getContacts, println, query } from "./utils.js"
+import { getContacts, println, query, readData } from "./utils.js"
 
 const webSocket = new WebSocketHandler()
 const messageHandler = new MessageHandler()
@@ -16,15 +19,24 @@ const chatHandler = new ChatHandler(apiHandler)
 const notification = new Notification()
 const keyboardHandler = new KeyBoardHandler()
 const visualHandler = new VisualHandler()
-const clickHandler = new ClickHandler()
-messageHandler.setChatHandler(chatHandler);
-messageHandler.setAPIHandler(apiHandler)
+const dataHandler = new DataHandler()
+const dateHandler = new DateHandler()
 
 
 // Setting each handler one to another
+messageHandler.setChatHandler(chatHandler);
+messageHandler.setAPIHandler(apiHandler)
+
 visualHandler.setChatHandler(chatHandler)
 visualHandler.setNotificationHandler(notification)
+visualHandler.setDataHandler(dataHandler)
 
+chatHandler.setDataHandler(dataHandler)
+chatHandler.setVisualHandler(visualHandler)
+
+
+dataHandler.setDateHandler(dateHandler)
+dataHandler.setAPIHAndler(apiHandler)
 
 
 // Passing arguments
@@ -78,17 +90,42 @@ function selectClickedFriend(friendDetails){
         localStorage.setItem('selectedContactInfo',JSON.stringify(friendDetails))
         webSocket.setTheRoomForSelected(friendDetails);
         
-        // Get the messages then add them base on who sent it
-        apiHandler.getMessagesOfTwoPersons(
-            friendDetails['contact'],
-            JSON.parse(localStorage.getItem('userDetails'))['contact']
-        ).then(e => e.json()).then(e => {
-            e.forEach(e => {
-                visualHandler.updateMessageList({
-                    message:e['content']
-                },e['sentbyid'] !== friendDetails['contact'] )
-            })
-        })
+
+        const currentMessages = dataHandler.getMessages(friendDetails['contact'])
+    
+        if(!currentMessages){
+             // Get the messages then add them base on who sent it
+                apiHandler.getMessagesOfTwoPersons(
+                    friendDetails['contact'],
+                    readData('userDetails')['contact']
+                ).then(e => e.json()).then(e => {
+                    e.forEach(e => {
+                        const fromUser = e['sentbyid'] !== friendDetails['contact']
+                        const dataHandlerObject = new DataHandlerMessageModel(e)
+                        dataHandlerObject.fromUser = fromUser;
+                        dataHandlerObject.friend = friendDetails['contact']
+                        dataHandler.addMessage(dataHandlerObject)
+                        visualHandler.updateMessageList(dataHandlerObject,fromUser)
+                    })
+                })
+        }else{
+            
+            const msgs = dataHandler.reformatMessages(currentMessages.map( (e) => {
+                const model = new DataHandlerMessageModel(e)
+                return model;
+            } ))
+
+            const msgOBJ    = dataHandler.groupMessagesBaseOnDate(msgs)
+            visualHandler.addMessagesToTheView(msgOBJ)
+
+            // visualHandler
+            // currentMessages.forEach((e) => {
+            //     const msg = new DataHandlerMessageModel(e)
+            //     visualHandler.updateMessageList(msg)
+            // })
+        }
+
+       
 
         chatHandler.currentMessageContacts[friendDetails.contact] = {}
 
@@ -101,18 +138,21 @@ function selectClickedFriend(friendDetails){
 const SEND_MSG_CLS_NAME = ".send-message-action"
 const SEND_MSG_INPUT_CLS_NAME = ".send-message-input"
 function sendTextMessageAction(){
-    const user = JSON.parse(localStorage.getItem('selectedContactInfo'))
-    
-    query(SEND_MSG_CLS_NAME).addEventListener('click',function(event) {
+        const user = readData('selectedContactInfo')
+        query(SEND_MSG_CLS_NAME).addEventListener('click',function(event) {
         const input = query(SEND_MSG_INPUT_CLS_NAME);
         webSocket.sendTextMessage(input.value,user.contact)
-        visualHandler.updateMessageList({message:input.value},true)
+        const data = {message:input.value}
+        const msg = new DataHandlerMessageModel({content:input.value,friend:user.contact,createdAt:(new Date()).toUTCString()})
+        msg.fromUser = true;
+        msg.friend = user.contact
+        visualHandler.updateMessageList(msg,true)
+        dataHandler.addMessage(msg)
         input.value = ``
     })
 
 
 }
-messageHandler.setOnReceivedMessage(visualHandler.updateMessageList);
 
 
 
@@ -198,19 +238,33 @@ chatHandler.setNotificationHandler((data) => {
 
 // 1. KEYBOARD HANDLER
 keyboardHandler.setOnEnter((event) => {
-     const user = JSON.parse(localStorage.getItem('selectedContactInfo'))
+        const user = readData('selectedContactInfo')
         const input = query(SEND_MSG_INPUT_CLS_NAME);
         webSocket.sendTextMessage(input.value,user.contact)
-        visualHandler.updateMessageList({message:input.value},true)
+        const data = {message:input.value}
+        const msg = new DataHandlerMessageModel({
+            content:input.value,friend:user.contact,createdAt:(new Date()).toUTCString()})
+        
+        msg.fromUser = true;
+        msg.friend = user.contact
+
+        const updatedMessage = dataHandler.reformatMessages([msg])[0]
+
+        visualHandler.addOneToday(updatedMessage,true)
+        dataHandler.addMessage(msg)
         input.value = ``
+        
+        
 })
 
 
 
-document.querySelector(".chat-info").addEventListener('scroll',(event) => {
+document.querySelector(".chat-info").addEventListener('scroll',async (event) => {
     const ele = document.querySelector(".chat-info")
+
     if(ele.scrollTop === 0){
-        println("Scroll is at the top")
+        const messages = await dataHandler.loadPreviousMessages(10)
+        visualHandler.updatePreviousMessage(messages)
     }
 
     if(ele.scrollTop + ele.clientHeight >= ele.scrollHeight ){

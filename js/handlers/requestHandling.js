@@ -1,5 +1,6 @@
 import { ChatHandler } from "./chatHandler.js"
 import { matchActiveAndReceivedMessageContact, println } from "../utils.js"
+import { DatabaseMessageModel } from "../models.js"
 
 const MESSAGE_TYPES = {
     'SEND':0,
@@ -223,7 +224,7 @@ export class APIHandler {
      * We don't await.So you can get the status code.
      * @param {String} personOne 
      * @param {String} personTwo 
-     * @returns {Promise}
+     * @returns {Promise<DatabaseMessageModel[]>}
      */
     getMessagesOfTwoPersons(personOne,personTwo,limit=20,skip=0){
         const localPath = "/messages/get-messages"
@@ -344,6 +345,28 @@ export class APIHandler {
                     readAt: (new Date()).toUTCString()
                 }
             }
+        })
+    }
+
+
+
+    loadPreviousMessages(contacts,timeAndDate,limit=10,skip=0){
+        const localPath = "/messages/load-messages";
+        const url = new URL(this.serverBase + localPath);
+
+        const query = url.searchParams
+
+        const [personOne,personTwo] = contacts.sort()
+        
+        query.set('personOne',personOne)
+        query.set('personTwo',personTwo)
+        query.set('lastTime',timeAndDate)
+        query.set('limit',limit)
+        query.set('skip',skip)
+
+        const requestPath = url.toString()
+        return jsonFetch(requestPath,{
+            method:"GET"
         })
     }
 

@@ -68,3 +68,47 @@ export function println(...args){
     if(IS_PRODUCTION)return;
     console.log(...args)
 }
+
+
+/**
+ * Read data from the local storage
+ * @param {string} name - saved name for the data 
+ * @param {boolean} jsonParse - parse the string if you want 
+ * @returns 
+ */
+export function readData(name,jsonParse=true){
+    const item =  localStorage.getItem(name)
+    if(!item){return null;}
+    return jsonParse ? JSON.parse(item) : item;
+}
+
+/**
+ * Save the object in json format
+ * @param {string} name - name you want to save as 
+ * @param {object} obj - object you wanna save
+ */
+export function saveData(name,obj){
+    localStorage.setItem(name,JSON.stringify(obj))
+}
+
+/**
+ * Sort the date keys in order
+ * @param {string[]} keys 
+ */
+export function sortDateKeys(keys){
+
+    const todayIndex = keys.indexOf("Today")
+
+    if(todayIndex > -1){
+        keys.splice(todayIndex,1)
+    }
+
+    const yesterdayIndex = keys.indexOf("Yesterday")
+
+    if(yesterdayIndex > -1){
+        keys.splice(yesterdayIndex,1)
+    }
+
+    console.log(keys.sort(e => new Date(e).getTime()))
+
+}

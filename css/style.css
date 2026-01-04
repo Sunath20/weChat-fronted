@@ -259,6 +259,12 @@ body{
     overflow-y: scroll;
 }
 
+.date-specifier {
+    text-align: center;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
 .message-by-user{
     text-align: end;
     margin-right: 10px;

@@ -1,4 +1,4 @@
-import {APIHandler} from "./requestHandling.js"
+import {APIHandler} from "./handlers/requestHandling.js"
 
 
 
@@ -89,7 +89,6 @@ async function onStart(){
 
     // Switch to sign in
     document.querySelector(SWITCH_ACTION_TO_SIGN_IN_CLS_NAME).addEventListener('click',(event) => {
-        console.log("clicked")
             signUpFields.className = "fields sign-up-fields hide"
             signInFields.className = "fields sign-in-fields"
 
@@ -100,7 +99,6 @@ async function onStart(){
     })
     // Switch to sign up
     document.querySelector(SWITCH_ACTION_TO_SIGN_UP_CLS_NAME).addEventListener('click',(event) => {
-             console.log("Clicked here")
             signUpFields.className = "fields sign-up-fields"
             signInFields.className = "fields sign-in-fields hide"
 
