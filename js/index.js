@@ -23,9 +23,12 @@ const dataHandler = new DataHandler()
 const dateHandler = new DateHandler()
 
 
+
 // Setting each handler one to another
 messageHandler.setChatHandler(chatHandler);
-messageHandler.setAPIHandler(apiHandler)
+messageHandler.setAPIHandler(apiHandler);
+messageHandler.setDataHandler(dataHandler)
+messageHandler.setVisualHandler(visualHandler)
 
 visualHandler.setChatHandler(chatHandler)
 visualHandler.setNotificationHandler(notification)
@@ -33,10 +36,13 @@ visualHandler.setDataHandler(dataHandler)
 
 chatHandler.setDataHandler(dataHandler)
 chatHandler.setVisualHandler(visualHandler)
+chatHandler.setWebSocketHandler(webSocket)
 
 
 dataHandler.setDateHandler(dateHandler)
 dataHandler.setAPIHAndler(apiHandler)
+dataHandler.setWebSocketHandler(webSocket)
+dataHandler.setVisualHandler(visualHandler)
 
 
 // Passing arguments
@@ -83,14 +89,18 @@ saveNewProfileAction.addEventListener('click',saveNewProfile);
 function selectClickedFriend(friendDetails){
     return () => {
 
+        // Set the visual setup for the friend
         visualHandler.setCurrentFriend(friendDetails);
         visualHandler.clearChat()
 
     
+        // Update the selected friend in the storage
         localStorage.setItem('selectedContactInfo',JSON.stringify(friendDetails))
-        webSocket.setTheRoomForSelected(friendDetails);
-        
 
+        // Create a room if a room does not exist for selected two peoples
+        webSocket.setTheRoomForSelected(friendDetails);
+
+        // Get the messages from the storage
         const currentMessages = dataHandler.getMessages(friendDetails['contact'])
     
         if(!currentMessages){
@@ -99,31 +109,81 @@ function selectClickedFriend(friendDetails){
                     friendDetails['contact'],
                     readData('userDetails')['contact']
                 ).then(e => e.json()).then(e => {
-                    e.forEach(e => {
-                        const fromUser = e['sentbyid'] !== friendDetails['contact']
-                        const dataHandlerObject = new DataHandlerMessageModel(e)
-                        dataHandlerObject.fromUser = fromUser;
-                        dataHandlerObject.friend = friendDetails['contact']
-                        dataHandler.addMessage(dataHandlerObject)
-                        visualHandler.updateMessageList(dataHandlerObject,fromUser)
-                    })
+                    // e.forEach(e => {
+                    //     const fromUser = e['sentbyid'] !== friendDetails['contact']
+                    //     const dataHandlerObject = new DataHandlerMessageModel(e)
+                    //     dataHandlerObject.fromUser = fromUser;
+                    //     dataHandlerObject.friend = friendDetails['contact']
+                    //     dataHandler.addMessage(dataHandlerObject);
+                    //     visualHandler.updateMessageList(dataHandlerObject,fromUser);
+                    // })
+
+                    const msgs = dataHandler.reformatMessages(e.map(x => {
+                     const msgData =    new DataHandlerMessageModel(x)
+                     const fromUser = x['sentbyid'] !== friendDetails['contact']
+                     msgData.fromUser = fromUser;
+                     return msgData
+                    }))
+                    const msgObject = dataHandler.groupMessagesBaseOnDate(msgs)
+                    visualHandler.addMessagesToTheView(msgObject)
                 })
         }else{
             
+            // Get the messages and reformat them into data handler messages
             const msgs = dataHandler.reformatMessages(currentMessages.map( (e) => {
                 const model = new DataHandlerMessageModel(e)
                 return model;
             } ))
 
+
+            // Group the messages base on the dates
             const msgOBJ    = dataHandler.groupMessagesBaseOnDate(msgs)
             visualHandler.addMessagesToTheView(msgOBJ)
 
-            // visualHandler
-            // currentMessages.forEach((e) => {
-            //     const msg = new DataHandlerMessageModel(e)
-            //     visualHandler.updateMessageList(msg)
-            // })
-        }
+            // Load the not loaded delivered messages
+            const lastMessage = msgs[msgs.length-1]
+            apiHandler.loadNotDeliveredMessages(friendDetails.contact,lastMessage.messageID).then(e => e.json()).then(e => {
+                
+
+                const mappedMessages = e.map(x => {
+                   const m = new DataHandlerMessageModel(x)
+                   const fromUser = x['sentbyid'] !== friendDetails['contact'];
+                   m.fromUser = fromUser;
+                   m.friend = friendDetails['contact']
+                   return m;
+                })
+
+                mappedMessages.forEach(e => {
+                    dataHandler.addMessage(e);
+                })
+
+                const formattedMessages = dataHandler.formatLoadedMessages(mappedMessages)
+                visualHandler.updateLaterMessages(formattedMessages)
+
+                dataHandler.updateNotDeliveredMessages(friendDetails['contact'])
+                dataHandler.loadDeliveredAndSeenMessageTimesIf(friendDetails['contact']).then(e => {
+                    console.log(e , " Okay date returned ")
+                    for(let i = 0 ; i < e.length;i++){
+                        const msg = e[i]
+                        
+                        if(msg['userReceivedAt']){
+                            console.log("Updating a message")
+                            dataHandler.updateMessage(friendDetails['contact'],msg['messageID'],{userReceivedAt:msg['userReceivedAt']})
+                            visualHandler.setMessageDelivered(msg['messageID'])
+                        }
+
+                        if(msg['userRead']){
+                            dataHandler.updateMessage(friendDetails['contact'],msg['messageID'],{userRead:true,userReadMessageAt:msg['userReadMessageAt']});
+                            visualHandler.readMessage(msg['messageID'])
+                        }
+
+
+                    }
+                })
+        })}
+            
+            
+            // dataHandler.updateNotDeliveredMessages(friendDetails['contact'])
 
        
 
@@ -142,12 +202,12 @@ function sendTextMessageAction(){
         query(SEND_MSG_CLS_NAME).addEventListener('click',function(event) {
         const input = query(SEND_MSG_INPUT_CLS_NAME);
         webSocket.sendTextMessage(input.value,user.contact)
-        const data = {message:input.value}
-        const msg = new DataHandlerMessageModel({content:input.value,friend:user.contact,createdAt:(new Date()).toUTCString()})
-        msg.fromUser = true;
-        msg.friend = user.contact
-        visualHandler.updateMessageList(msg,true)
-        dataHandler.addMessage(msg)
+        // const data = {message:input.value}
+        // const msg = new DataHandlerMessageModel({content:input.value,friend:user.contact,createdAt:(new Date()).toUTCString()})
+        // msg.fromUser = true;
+        // msg.friend = user.contact
+        // visualHandler.updateMessageList(msg,true)
+        // dataHandler.addMessage(msg)
         input.value = ``
     })
 
@@ -242,16 +302,16 @@ keyboardHandler.setOnEnter((event) => {
         const input = query(SEND_MSG_INPUT_CLS_NAME);
         webSocket.sendTextMessage(input.value,user.contact)
         const data = {message:input.value}
-        const msg = new DataHandlerMessageModel({
-            content:input.value,friend:user.contact,createdAt:(new Date()).toUTCString()})
+        // const msg = new DataHandlerMessageModel({
+        //     content:input.value,friend:user.contact,createdAt:(new Date()).toUTCString()})
         
-        msg.fromUser = true;
-        msg.friend = user.contact
+        // msg.fromUser = true;
+        // msg.friend = user.contact
 
-        const updatedMessage = dataHandler.reformatMessages([msg])[0]
+        // const updatedMessage = dataHandler.reformatMessages([msg])[0]
 
-        visualHandler.addOneToday(updatedMessage,true)
-        dataHandler.addMessage(msg)
+        // visualHandler.addOneToday(updatedMessage,true)
+        // dataHandler.addMessage(msg)
         input.value = ``
         
         
@@ -272,6 +332,10 @@ document.querySelector(".chat-info").addEventListener('scroll',async (event) => 
     }
 
 })
+
+
+
+
 
 // RUN THE MAIN FUNCTIONS
 

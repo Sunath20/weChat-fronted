@@ -265,6 +265,10 @@ body{
     margin-bottom: 10px;
 }
 
+.message-by-user[read="true"] > span {
+    color: blue;
+}
+
 .message-by-user{
     text-align: end;
     margin-right: 10px;

@@ -109,6 +109,6 @@ export function sortDateKeys(keys){
         keys.splice(yesterdayIndex,1)
     }
 
-    console.log(keys.sort(e => new Date(e).getTime()))
+
 
 }

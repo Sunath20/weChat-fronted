@@ -17,9 +17,24 @@ const SELECTED_PERSON_INFO_CLS = ".contact-info"
  */
 export class VisualHandler {
 
+
+  
+
     constructor(contacts=null,messageCount=0){
         this.messageCount = messageCount;
         this.contacts = contacts;
+        
+        // Add the observer
+        // Remove the observer as soon as it captures an event
+        this.observer = new IntersectionObserver((entries,objs) => {
+            for(let i = 0 ; i < entries.length;i++){
+                if(entries[i].isIntersecting){
+                    const seenMessageID = entries[i].target.getAttribute('messageid');
+                    this.dataHandler.onSeenMessage(seenMessageID);
+                    objs.unobserve(entries[i].target)                    
+                }
+            }
+        },{root:query("chat-info")})
     }
 
     /**
@@ -59,13 +74,43 @@ export class VisualHandler {
      */
     updateMessageList(payload,byUser=false,onlyTemplate=false){
     this.messageCount += 1;
-
     const messageElement = document.createElement('div')
     messageElement.className = `message message-by-${payload.fromUser ? 'user' : 'sender' }`
+
+    if(payload.userReceivedAt){
+        messageElement.setAttribute('delivered',"true")
+    }
+
+    if(payload.userRead){
+        messageElement.setAttribute('read','true')
+    }
+
+    messageElement.setAttribute('messageID',payload.messageID)
     messageElement.innerHTML = `
         <h4>${payload.content}</h4>
         <h6>${payload.timeTag}</h6>
     ` 
+
+
+
+    if(payload.fromUser){
+        messageElement.innerHTML += `
+
+         <span class="uk-margin-small-right" uk-icon="check"></span>
+        `
+
+        if(payload.userReceivedAt){
+        messageElement.innerHTML += `
+        <span class="uk-margin-small-right" uk-icon="check"></span>
+        `
+    }
+    }
+
+    if(!payload.fromUser && !payload.userRead){
+        this.observer.observe(messageElement);
+    }
+    
+
     if(!onlyTemplate){
         document.querySelector(MESSAGE_LIST_CLS_NAME).appendChild(messageElement);
         document.querySelector(MESSAGE_LIST_CLS_NAME).scrollTop =  HEIGHT_PER_MESSAGE * this.messageCount;
@@ -129,6 +174,8 @@ export class VisualHandler {
 
 
     /**
+     * Add messages To the chat info
+     * Usually calls upon awaken the app or change of chat
      * @param {Object} messages 
      */
     addMessagesToTheView(messages){
@@ -139,6 +186,9 @@ export class VisualHandler {
         messageKeys.splice(messageKeys.indexOf("Yesterday"),1)
         this.drawBaseOnDate('Yesterday',messages['Yesterday'])
         this.drawBaseOnDate('Today',messages['Today'])
+        delete messages['Yesterday']
+        delete messages['Today']
+        this.updatePreviousMessage(messages)
     }
 
 
@@ -157,10 +207,13 @@ export class VisualHandler {
         header.className = 'date-specifier'
 
         messageList.appendChild(header);
-
-        msgs.forEach(e => {
+        if(msgs){
+        
+            msgs.forEach(e => {
             messageList.appendChild(this.updateMessageList(e,false,true))
-        })
+            })
+        }
+    
 
 
         query(MESSAGE_LIST_CLS_NAME).appendChild(messageList)
@@ -168,18 +221,36 @@ export class VisualHandler {
     }
 
     /**
-     * 
+     * Either user receive or send message during the current day will be added
      * @param {DataHandlerMessageModel} payload 
      */
     addOneToday(payload){
         const messages = [payload]
         const msg = this.dataHandler.reformatMessages(messages)[0]
-        console.log(msg)
-        const root = query('.message-list[date="Today"]')
-        console.log(msg, " This is the new one")
+        let root = query('.message-list[date="Today"]')
+        if(!root){
+            const chatDetails = query(".chat-info")
+            const messageList = document.createElement('div')
+            messageList.className = 'message-list'
+            messageList.setAttribute('date','Today')
+
+            const titleDetails = document.createElement('h6')
+            titleDetails.className = 'date-specifier'
+            titleDetails.innerText = 'Today'
+
+            root = messageList;
+
+            messageList.append(titleDetails);
+            chatDetails.append(messageList);
+
+
+        }
+
         const element = this.updateMessageList(msg,true,true)
         root.appendChild(element)
     }
+
+
 
     /**
      * Update the previous messages
@@ -194,13 +265,10 @@ export class VisualHandler {
 
         for(let i = 0 ; i < dateKeys.length;i++){
             const filter = `.message-list[date="${dateKeys[i]}"]`
-            println(filter)
             const element = query(filter)
             const elementMessages = messages[dateKeys[i]].map(e => this.updateMessageList(e,true,true));
 
-            console.log("This is the elementy ",element)
             if(element != null || element != undefined){
-                console.log("These are the new ones")
                 
                 for(let j = 0; j < elementMessages.length;j++){
                     element.insertBefore(elementMessages[j],element.children[j])
@@ -225,6 +293,83 @@ export class VisualHandler {
         }
 
         
+    }
+
+    /**
+     * Add messages after the current position
+     * Usual does when the user turn off the phone and power back on
+     * We want the messages in the conversation after the last message
+     * Messages will be added just like the previous but in the other way
+     * @param {*} messages 
+     */
+    updateLaterMessages(messages){
+        const dateKeys = Object.keys(messages)
+        sortDateKeys(dateKeys.map(e => e))
+
+        for(let i = 0 ; i < dateKeys.length;i++){
+            const filter = `.message-list[date="${dateKeys[i]}"]`
+            const element = query(filter)
+            const elementMessages = messages[dateKeys[i]].map(e => this.updateMessageList(e,true,true));
+
+            if(element != null || element != undefined){
+                
+                for(let j = 0; j < elementMessages.length;j++){
+                    element.appendChild(elementMessages[j])
+                }   
+                
+                
+            }else{
+                    const newMessageContainer = document.createElement('div')
+                    newMessageContainer.className = 'message-list'
+                    newMessageContainer.setAttribute('date',dateKeys[i])
+                    const dateAdder = document.createElement('h4')
+                    dateAdder.className = 'date-specifier'
+                    dateAdder.innerText = dateKeys[i]
+
+                    newMessageContainer.append(dateAdder)
+                    newMessageContainer.append(...elementMessages)
+
+                    const chat = query('.chat-info')
+                    chat.append(newMessageContainer)
+                          
+            }
+        }
+    }
+
+
+
+    messageOnDelivery(messageId){
+        query('.message')
+    }
+
+
+    /**
+     * Set the message deliver in the ui
+     * Add a span with icon check
+     * @param {string} messageId  - message id
+     */
+    setMessageDelivered(messageId){
+        const message = query(`.message[messageid="${messageId}"]`)
+        const delivered = message.getAttribute('delivered') === "true"
+        console.log( message.getAttribute('delivered'),delivered)
+        if(!delivered){
+            const icon = document.createElement('span')
+            icon.setAttribute('uk-icon',"icon: check")
+            icon.setAttribute('delivered','true')
+            message.appendChild(icon)
+        }
+   
+    }
+
+
+
+    /**
+     * Change the message attribute in order to change check icon color
+     * @param {string} messageID 
+     */
+    readMessage(messageID){
+        const element = query(`.message[messageid="${messageID}"]`)
+        element.setAttribute('read','true')
     }
 
 

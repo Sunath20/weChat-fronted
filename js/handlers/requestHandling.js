@@ -1,14 +1,27 @@
 import { ChatHandler } from "./chatHandler.js"
-import { matchActiveAndReceivedMessageContact, println } from "../utils.js"
+import { getCurrentActiveContact, matchActiveAndReceivedMessageContact, println, readData } from "../utils.js"
 import { DatabaseMessageModel } from "../models.js"
+import { DataHandler } from "./dataHandler.js"
+import { VisualHandler } from "./visualHandler.js"
+import { MessageDeliveredPayload } from "../serverPayloads.js"
+import { SendMessageDeliveredPayload } from "../clientPayloads.js"
 
-const MESSAGE_TYPES = {
+export const MESSAGE_TYPES = {
     'SEND':0,
     'CREATE_ROOM':1,
     'ROOM_CREATED':2,
     'ROOM_CREATED_FAILED':3,
-    'MESSAGE_RECEIVED':4
+    'MESSAGE_RECEIVED':4,
+    'SET_MESSAGE_DELIVERED':5,
+    'MESSAGE_DELIVERED':6,
+    'GET_BACK_CREATED_MESSAGE':7,
+    'SET_LIST_OF_MESSAGE_DELIVERED':8,
+    'RECEIVE_LIST_OF_MESSAGE_DELIVERED':9,
+    'SET_SEEN_MESSAGE':10,
+    'RECEIVE_SEEN_MESSAGE':11,
+    
 }
+
 
 export const USER_HANDLES = {
     'NEW_CONNECTION':0,
@@ -30,7 +43,6 @@ function jsonFetch(url,metaData){
         metaData['body'] = JSON.stringify(metaData['body'])
     }
 
-    console.log(url,metaData)
     return fetch(url,metaData)
 }
 
@@ -41,6 +53,7 @@ export class WebSocketHandler {
         this.socket = new WebSocket('ws://localhost:3000')
         this.socket.onopen = this.onOpen.bind(this)
         this.socket.onmessage = this.onMessage.bind(this)
+        this.sendData = this.sendData.bind(this)
         this.untilOpens = []
         this.handlers = {}
         this.opened = false;
@@ -77,7 +90,7 @@ export class WebSocketHandler {
     /**
      * Mainly use my the web socket handler itself
      * If somehow our connection initialization take more time we can't send data.We will collect all the data in order than perform all the socket requests in the added order.
-     * @param {*} data 
+     * @param {string} data 
      */
     sendData(data){
         if(!this.opened){
@@ -135,6 +148,44 @@ export class WebSocketHandler {
 
         this.sendData(JSON.stringify(data));
     }
+
+
+    /**
+     * Set a bunch of messages to be delivered
+     * @param {Array} messageIDList 
+     * @param {string} to - the person user want to nofity 
+     */
+    sendSetDeliveredMessages(messageIDList,to,deliveredTime){
+        
+        const payload = {
+            mainHandler:MAIN_HANDLERS.MESSAGE,
+            handlerOne:MESSAGE_TYPES.SET_LIST_OF_MESSAGE_DELIVERED,
+            to:to,
+            messageIDList:messageIDList,
+            deliveredTime
+        }
+
+        const socketPayload = JSON.stringify(payload)
+        this.sendData(socketPayload)
+    }
+
+    /**
+     * Set the seen to true in the database as well as send the data to the other user too
+     * @param {string} messageID 
+     * @param {string} to 
+     * @param {string} seenTime 
+     */
+    sendSeenMessage(messageID,to,seenTime){
+        const payload = {
+            mainHandler:MAIN_HANDLERS.MESSAGE,
+            handlerOne:MESSAGE_TYPES.SET_SEEN_MESSAGE,
+            messageID:messageID,
+            to:to,
+            seenTime
+        }
+
+        this.sendData(JSON.stringify(payload))
+    }
 }
 
 
@@ -146,7 +197,11 @@ export class MessageHandler {
     constructor(){
         this.messageReceivedFunc = null;
         this.handlers = {
-            [MESSAGE_TYPES.MESSAGE_RECEIVED]:this.onMessage.bind(this)
+            [MESSAGE_TYPES.MESSAGE_RECEIVED]:this.onMessage.bind(this),
+            [MESSAGE_TYPES.MESSAGE_DELIVERED]:this.onMessageDelivered.bind(this),
+            [MESSAGE_TYPES.GET_BACK_CREATED_MESSAGE]:this.onOwnMessageSaved.bind(this),
+            [MESSAGE_TYPES.RECEIVE_LIST_OF_MESSAGE_DELIVERED]:this.receiveListOfMessageDelivered.bind(this),
+            [MESSAGE_TYPES.RECEIVE_SEEN_MESSAGE]:this.onSeenMessageReceived.bind(this)
         }
     }
 
@@ -159,6 +214,22 @@ export class MessageHandler {
     }
 
     /**
+     * Set the data handler
+     * @param {DataHandler} dataHandler 
+     */
+    setDataHandler(dataHandler){
+        this.dataHandler = dataHandler;
+    }
+
+    /**
+     * Set the visual handler
+     * @param {VisualHandler} visualHandler 
+     */
+    setVisualHandler(visualHandler){
+        this.visualHandler = visualHandler;
+    }
+
+    /**
      * Set the Chat handler 
      * This will be used when a new message pop up
      * It will trigger new message event and notification events
@@ -167,6 +238,14 @@ export class MessageHandler {
      */
     setChatHandler(handler){
             this.chatHandler = handler;
+    }
+
+    /**
+     * Set the web socket handler
+     * @param {WebSocketHandler} webSocketHandler 
+     */
+    setWebSocketHandler(webSocketHandler){
+        this.webSocketHandler= webSocketHandler;
     }
 
     /**
@@ -184,6 +263,7 @@ export class MessageHandler {
      * @param {Object} payload 
      */
     handle(payload){
+        console.log(payload , " Got from the web socket")
         if(payload['handlerOne'] && this.handlers[payload['handlerOne']]){
             this.handlers[payload['handlerOne']](payload)
         }
@@ -198,10 +278,73 @@ export class MessageHandler {
         if(this.messageReceivedFunc && matchActiveAndReceivedMessageContact(payload['from'])){
             this.messageReceivedFunc(payload)
         }
-         this.chatHandler.newMessage(payload)
-         const response = await this.apiHandler.sentMessageDelivered(payload['messageId'])
-         const outputData = await response.json()
+        this.chatHandler.newMessage(payload)
+        //  const response = await this.apiHandler.sentMessageDelivered(payload['messageId'])
+        //  const outputData = await response.json()
     }
+
+    /**
+     * Call the function when the other user receive/download the message
+     * not the reading just receiving
+     * @param {MessageDeliveredPayload} payload 
+     */
+    onMessageDelivered(payload){
+        println("Friends received the message " , payload)
+            this.dataHandler.updateMessage(
+                payload.from,
+                payload.messageID,
+                payload.changes
+            );
+
+
+            if(getCurrentActiveContact(payload.from)){
+                this.visualHandler.setMessageDelivered(payload.messageID)
+            }
+    }
+
+    /**
+     * Call this function when the current message is saved
+     */
+    onOwnMessageSaved(payload){
+        this.chatHandler.ownMessageWithFeedBack(payload)
+    }
+
+    /**
+     * Receive the list of messages set as delivered on real time
+     * @param {*} payload 
+     */
+    receiveListOfMessageDelivered(payload){
+        const {messageIDList,from,deliveredTime} = payload;     
+        console.log(payload, " This what we receive from the socket")
+        this.dataHandler.updateDeliveredMessageTime(
+            from,
+            messageIDList,
+            deliveredTime
+        ) ;
+
+        messageIDList.forEach(e => {
+            this.visualHandler.setMessageDelivered(e)
+        })
+
+    }
+
+
+    /**
+     * On the other sees the message
+     * Occur when other message captured with the observable event
+     * @param {*} payload 
+     */
+    onSeenMessageReceived(payload){
+        const {changes,from,messageID} = payload
+        console.log("Message set to be seen")
+        this.dataHandler.updateMessage(from,messageID,changes);
+        this.visualHandler.readMessage(messageID);
+
+        console.log("Message read payload going to update ",payload)
+    }
+
+
+    
 
 }
 
@@ -313,17 +456,17 @@ export class APIHandler {
      * @param {string} message_id 
      * @returns 
      */
-    sentMessageDelivered(message_id){
+    sentMessageDelivered(message_id,time){
         const localPath = "/messages/message-delivered"
         const url = this.serverBase + localPath
         return jsonFetch(url,{
             method:"POST",
             body:{
                 query:{
-                    messageId:message_id
+                    _id:message_id
                 },
                 payload:{
-                    receivedAt: (new Date()).toUTCString()
+                    userReceivedAt: time
                 }
             }
         })
@@ -349,7 +492,17 @@ export class APIHandler {
     }
 
 
-
+    /**
+     * Load messages from past
+     * contact has to be given
+     * Messages will be load before a certain date and time
+     * You can limit how many messages you want
+     * @param {*} contacts 
+     * @param {*} timeAndDate 
+     * @param {*} limit 
+     * @param {*} skip 
+     * @returns 
+     */
     loadPreviousMessages(contacts,timeAndDate,limit=10,skip=0){
         const localPath = "/messages/load-messages";
         const url = new URL(this.serverBase + localPath);
@@ -368,6 +521,42 @@ export class APIHandler {
         return jsonFetch(requestPath,{
             method:"GET"
         })
+    }
+
+
+    /**
+     * Load the messages after a certain date or time
+     * Usually when the user turn off the connection and revisit it
+     * To avoid time errors we usually get the message from the message id and feed back database created time
+     * @param {string} contact - chat person
+     * @param {string} messageID - last message id
+     * @returns 
+     */
+    loadNotDeliveredMessages(contact,messageID){
+        const localPath = "/messages/load-new-messages"
+        const url = new URL(this.serverBase + localPath)
+        const parameters = url.searchParams
+
+        const userDetails = readData('userDetails')
+        const [personOne,personTwo] = [contact,userDetails.contact].sort()
+        parameters.set('personOne',personOne)
+        parameters.set('personTwo',personTwo)
+        parameters.set('messageID',messageID)
+
+        return jsonFetch(url.toString(),{method:"GET"})
+    }
+
+
+    /**
+     * Load the messages userReceivedAt data with the time
+     * A list contain a message id and time will return
+     * @param {string} contact - friend id
+     * @param {*} messageIDList 
+     */
+    loadMessageDeliveredTimesIf(messageIDList){
+        const localPath = "/messages/get-message-deliver-times"
+        const url = this.serverBase + localPath;
+        return jsonFetch(url,{method:"POST",body:JSON.stringify({messageIDList:messageIDList})})
     }
 
 
