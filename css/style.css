@@ -210,7 +210,7 @@ body{
     font-size: 20px;
     top: 50%;
     transform: translate(5%,-50%);
-    width: 30%;
+    width: 90%;
     background: none;
     border: none;
     outline: none;
@@ -265,8 +265,17 @@ body{
     margin-bottom: 10px;
 }
 
+
+.message {
+    cursor: pointer;
+}
+
 .message-by-user[read="true"] > span {
     color: blue;
+}
+
+.message-by-sender > span {
+    display: none;
 }
 
 .message-by-user{

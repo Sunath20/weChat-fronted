@@ -30,6 +30,14 @@ export const USER_HANDLES = {
 
 
 
+export const FILE_TYPES = {
+    'FILE_CREATE':0,
+    'FILE_CHUCK_TO_SERVER':1,
+    'FILE_CHUCK_TO_CLIENT':2,
+    'FILE_CHUCK_FINISHED':3,
+    'FILE_CREATED':4
+}
+
 export const MAIN_HANDLERS = {
     'USER_CONFIG':0,
     'FILE_SHARE':1,
@@ -263,7 +271,6 @@ export class MessageHandler {
      * @param {Object} payload 
      */
     handle(payload){
-        console.log(payload , " Got from the web socket")
         if(payload['handlerOne'] && this.handlers[payload['handlerOne']]){
             this.handlers[payload['handlerOne']](payload)
         }
@@ -315,7 +322,6 @@ export class MessageHandler {
      */
     receiveListOfMessageDelivered(payload){
         const {messageIDList,from,deliveredTime} = payload;     
-        console.log(payload, " This what we receive from the socket")
         this.dataHandler.updateDeliveredMessageTime(
             from,
             messageIDList,
@@ -336,11 +342,8 @@ export class MessageHandler {
      */
     onSeenMessageReceived(payload){
         const {changes,from,messageID} = payload
-        console.log("Message set to be seen")
         this.dataHandler.updateMessage(from,messageID,changes);
         this.visualHandler.readMessage(messageID);
-
-        console.log("Message read payload going to update ",payload)
     }
 
 
@@ -558,6 +561,9 @@ export class APIHandler {
         const url = this.serverBase + localPath;
         return jsonFetch(url,{method:"POST",body:JSON.stringify({messageIDList:messageIDList})})
     }
+
+
+    getServerBase(){return this.serverBase}
 
 
 }

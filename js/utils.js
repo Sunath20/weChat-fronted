@@ -112,3 +112,18 @@ export function sortDateKeys(keys){
 
 
 }
+
+/**
+ * Returns the from and to id as a object
+ * Own user and selected user will be returned
+ * @returns 
+ */
+export function getSelectedUsersID(sorted=false){
+    const from = readData('userDetails').contact
+    const to = readData('selectedContactInfo').contact
+    if(sorted){
+        const [personOne,personTwo] = [from,to].sort()
+        return {personOne,personTwo}
+    }
+    return {from,to}
+}

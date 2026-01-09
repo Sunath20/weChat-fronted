@@ -81,7 +81,6 @@ export class DataHandler {
         const message = messages.filter(e => e.messageID === messageId)[0]
         const newMessage = {...message,...changes}
         const messageIndex = this.messages[from].indexOf(message)
-        console.log("This is the changes we made ",message,newMessage,changes,messageIndex)
         this.messages[from][messageIndex] = newMessage;
         saveData('messages',this.messages)
     }
@@ -215,11 +214,9 @@ export class DataHandler {
             const messageIndex = messageIdList.indexOf(message.messageID)
             if(messageIndex > -1){
                 this.messages[from][i].userReceivedAt = deliveredTime;
-                console.log("Updating the time in local space ",this.messages[from][messageIndex])
             }
 
         }
-        console.log(this.messages[from] , " Updated deliver time",deliveredTime , new Date(deliveredTime))
         saveData('messages',this.messages);
     }
 
@@ -239,7 +236,6 @@ export class DataHandler {
             }
         }
 
-                console.log(messages," check for dates",IDList)
 
         return this.apiHandler.loadMessageDeliveredTimesIf(IDList).then(e => e.json())
     }

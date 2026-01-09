@@ -3,6 +3,8 @@ import { println, query, sortDateKeys } from "../utils.js";
 import { DataHandler } from "./dataHandler.js";
 import { Notification } from "./notification.js";
 
+// import UIkit from "../lib/uikit.js"
+
 // Message List
 const HEIGHT_PER_MESSAGE = 100;
 const MESSAGE_LIST_CLS_NAME = ".chat-info"
@@ -10,7 +12,7 @@ const MESSAGE_LIST_CLS_NAME = ".chat-info"
 
 // Friend Details
 const SELECTED_PERSON_INFO_CLS = ".contact-info"
-
+const UPLOAD_PREVIEW_CONTAINER =".uploading-preview"
 
 /**
  * Responsible for maintain render elements,delete and update elements
@@ -23,6 +25,7 @@ export class VisualHandler {
     constructor(contacts=null,messageCount=0){
         this.messageCount = messageCount;
         this.contacts = contacts;
+        this.modalHandler = new ModalHandler();
         
         // Add the observer
         // Remove the observer as soon as it captures an event
@@ -351,7 +354,6 @@ export class VisualHandler {
     setMessageDelivered(messageId){
         const message = query(`.message[messageid="${messageId}"]`)
         const delivered = message.getAttribute('delivered') === "true"
-        console.log( message.getAttribute('delivered'),delivered)
         if(!delivered){
             const icon = document.createElement('span')
             icon.setAttribute('uk-icon',"icon: check")
@@ -372,7 +374,66 @@ export class VisualHandler {
         element.setAttribute('read','true')
     }
 
+     /**
+     * Add the progress bars and file names for the files
+     * @param {File[]} files 
+     */
+    uploadFilePreviews(files){
+        const uploadContainer = query(UPLOAD_PREVIEW_CONTAINER)
+
+        for(let i = 0 ; i < files.length;i++){
+            const file = files[i]
+            const element = document.createElement('div')
+            element.className="upload-file-instance"
+            element.setAttribute('upload-name',file.name)
+            element.setAttribute('upload-index',i)
+            const template = `
+                <h3>${file.name}</h3>
+                <progress class="uk-progress file-share-progress" upload-index="${i}" value="0" max="100"></progress>
+            `
+            element.innerHTML = template;
+            uploadContainer.appendChild(element)
+        }
 
 
+    }
+
+    clearUploadFilePreviewContainer(index,timeout=2000){
+        setTimeout(() => {
+            const element = query(`.upload-file-instance[upload-index="${index}"]`)
+            element.remove()
+        },timeout)
+    }
+
+
+
+}
+
+
+class ModalHandler {
+    
+    constructor(){  
+         this.modals = {}
+      }
+
+
+    registerModal(name,element){
+        this.modals[name] = element  
+    }
+
+    showModal(name){
+        if(!this.modals[name].className.includes("uk-open")){
+            this.modals[name].className += " uk-open"
+        }
+    }
+
+    hideModal(name){
+        if(this.modals[name].className.includes("uk-open")){
+            this.modals[name].className = this.modals[name].className.replace("uk-open")
+        }
+    }
+
+
+   
 }
 

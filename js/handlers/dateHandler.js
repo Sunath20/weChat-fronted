@@ -55,7 +55,6 @@ export class DateHandler {
         const day = dateOBJ.getDate()
         const year = dateOBJ.getFullYear()
 
-        console.log(dateOBJ.getDay(),dateOBJ.getFullYear(),dateOBJ.getMonth())
         return day + "/" + month+ "/" + year
     }
 

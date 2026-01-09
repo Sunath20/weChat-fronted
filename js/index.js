@@ -4,6 +4,7 @@ import { ChatHandler } from "./handlers/chatHandler.js"
 import { ClickHandler } from "./handlers/clickHandler.js"
 import { DataHandler } from "./handlers/dataHandler.js"
 import { DateHandler } from "./handlers/dateHandler.js"
+import { FileHandler } from "./handlers/fileHandler.js"
 import {KeyBoardHandler} from "./handlers/keyboardHandler.js"
 import { Notification, setNotificationsToZero } from "./handlers/notification.js"
 import {WebSocketHandler,MessageHandler, MAIN_HANDLERS,APIHandler} from "./handlers/requestHandling.js"
@@ -21,6 +22,7 @@ const keyboardHandler = new KeyBoardHandler()
 const visualHandler = new VisualHandler()
 const dataHandler = new DataHandler()
 const dateHandler = new DateHandler()
+const fileHandler = new FileHandler()
 
 
 
@@ -44,6 +46,9 @@ dataHandler.setAPIHAndler(apiHandler)
 dataHandler.setWebSocketHandler(webSocket)
 dataHandler.setVisualHandler(visualHandler)
 
+fileHandler.setAPIHandler(apiHandler)
+
+
 
 // Passing arguments
 const CHAT_SEND_TEXT_INPUT_CLS_NAME = ".text-input"
@@ -57,6 +62,7 @@ const contacts = getContacts()
 visualHandler.contacts = contacts;
 
 webSocket.setMainHandler(MAIN_HANDLERS.MESSAGE,messageHandler)
+
 
 // SAVE NEW PROFILE
 const saveNewProfileAction = query(".save-new-profile-button")
@@ -162,12 +168,12 @@ function selectClickedFriend(friendDetails){
 
                 dataHandler.updateNotDeliveredMessages(friendDetails['contact'])
                 dataHandler.loadDeliveredAndSeenMessageTimesIf(friendDetails['contact']).then(e => {
-                    console.log(e , " Okay date returned ")
+                 
                     for(let i = 0 ; i < e.length;i++){
                         const msg = e[i]
                         
                         if(msg['userReceivedAt']){
-                            console.log("Updating a message")
+                            
                             dataHandler.updateMessage(friendDetails['contact'],msg['messageID'],{userReceivedAt:msg['userReceivedAt']})
                             visualHandler.setMessageDelivered(msg['messageID'])
                         }
@@ -334,6 +340,31 @@ document.querySelector(".chat-info").addEventListener('scroll',async (event) => 
 })
 
 
+// Set File Sending
+const inputFilesElement = document.getElementById("FILES-SHARE_INPUT")
+inputFilesElement.addEventListener('change',async (event) => {
+    const files = event.target.files
+    if(files.length > 0){
+        visualHandler.uploadFilePreviews(files)
+        
+        for(let i = 0 ; i < files.length;i++){
+            const file = files[i]
+            const progressElement = query(`.file-share-progress[upload-index="${i}"]`)
+            
+            await fileHandler.fileSendStart(file,(chuck,chucks) => {
+                progressElement.max = chucks;
+                progressElement.value = chuck;
+            })
+
+            visualHandler.clearUploadFilePreviewContainer(i)
+        }
+
+    }
+
+    event.target.files = null;
+    event.target.value = null;
+})
+
 
 
 
@@ -342,3 +373,8 @@ document.querySelector(".chat-info").addEventListener('scroll',async (event) => 
 renderSelectedFriendOnStartup();
 renderFriends();
 sendTextMessageAction();
+
+
+// Setting the modals
+// visualHandler.modalHandler.registerModal('fileShare',query("#share-a-file"))
+// visualHandler.modalHandler.showModal('fileShare')
