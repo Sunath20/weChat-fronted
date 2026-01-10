@@ -289,6 +289,17 @@ body{
 }
 
 
+.message-content-if > img{
+    max-width: 200px;
+    max-height: 200px;
+}
+
+
+
+.message-by-user > .message-content-if{
+    display: flex;
+    justify-content: end;
+}
 
 
 

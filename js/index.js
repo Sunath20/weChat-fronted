@@ -4,7 +4,7 @@ import { ChatHandler } from "./handlers/chatHandler.js"
 import { ClickHandler } from "./handlers/clickHandler.js"
 import { DataHandler } from "./handlers/dataHandler.js"
 import { DateHandler } from "./handlers/dateHandler.js"
-import { FileHandler } from "./handlers/fileHandler.js"
+import { FileHandler, WebFileHandler } from "./handlers/fileHandler.js"
 import {KeyBoardHandler} from "./handlers/keyboardHandler.js"
 import { Notification, setNotificationsToZero } from "./handlers/notification.js"
 import {WebSocketHandler,MessageHandler, MAIN_HANDLERS,APIHandler} from "./handlers/requestHandling.js"
@@ -22,7 +22,7 @@ const keyboardHandler = new KeyBoardHandler()
 const visualHandler = new VisualHandler()
 const dataHandler = new DataHandler()
 const dateHandler = new DateHandler()
-const fileHandler = new FileHandler()
+const fileHandler = new WebFileHandler()
 
 
 
@@ -35,6 +35,7 @@ messageHandler.setVisualHandler(visualHandler)
 visualHandler.setChatHandler(chatHandler)
 visualHandler.setNotificationHandler(notification)
 visualHandler.setDataHandler(dataHandler)
+visualHandler.setFileHandler(fileHandler)
 
 chatHandler.setDataHandler(dataHandler)
 chatHandler.setVisualHandler(visualHandler)
@@ -47,6 +48,9 @@ dataHandler.setWebSocketHandler(webSocket)
 dataHandler.setVisualHandler(visualHandler)
 
 fileHandler.setAPIHandler(apiHandler)
+fileHandler.setDataHandler(dataHandler)
+fileHandler.setVisualHandler(visualHandler)
+fileHandler.setWebSocketHandler(webSocket)
 
 
 
@@ -128,8 +132,12 @@ function selectClickedFriend(friendDetails){
                      const msgData =    new DataHandlerMessageModel(x)
                      const fromUser = x['sentbyid'] !== friendDetails['contact']
                      msgData.fromUser = fromUser;
+                     msgData.friend = friendDetails['contact']
+                     dataHandler.addMessage(msgData);
                      return msgData
                     }))
+
+                    
                     const msgObject = dataHandler.groupMessagesBaseOnDate(msgs)
                     visualHandler.addMessagesToTheView(msgObject)
                 })
@@ -158,6 +166,8 @@ function selectClickedFriend(friendDetails){
                    m.friend = friendDetails['contact']
                    return m;
                 })
+
+                console.info("New Messages ",mappedMessages)
 
                 mappedMessages.forEach(e => {
                     dataHandler.addMessage(e);
@@ -378,3 +388,7 @@ sendTextMessageAction();
 // Setting the modals
 // visualHandler.modalHandler.registerModal('fileShare',query("#share-a-file"))
 // visualHandler.modalHandler.showModal('fileShare')
+
+fileHandler.init()
+
+fileHandler.retrieveFileFromServer("5db6a1e2-254c-439a-8732-19814fdc26a6","0ebd85dd-6349-4440-adf8-8f4802493905",'WhatsApp Image 2025-11-17 at 13.11.48.jpeg',"image/jpeg");

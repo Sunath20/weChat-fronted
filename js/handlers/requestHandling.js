@@ -19,7 +19,8 @@ export const MESSAGE_TYPES = {
     'RECEIVE_LIST_OF_MESSAGE_DELIVERED':9,
     'SET_SEEN_MESSAGE':10,
     'RECEIVE_SEEN_MESSAGE':11,
-    
+    'FILE_MESSAGE_SEND_TO_OTHER_USER':12,
+    'FILE_MESSAGE_RECEIVE_TO_OTHER_USER':13,
 }
 
 
@@ -209,7 +210,8 @@ export class MessageHandler {
             [MESSAGE_TYPES.MESSAGE_DELIVERED]:this.onMessageDelivered.bind(this),
             [MESSAGE_TYPES.GET_BACK_CREATED_MESSAGE]:this.onOwnMessageSaved.bind(this),
             [MESSAGE_TYPES.RECEIVE_LIST_OF_MESSAGE_DELIVERED]:this.receiveListOfMessageDelivered.bind(this),
-            [MESSAGE_TYPES.RECEIVE_SEEN_MESSAGE]:this.onSeenMessageReceived.bind(this)
+            [MESSAGE_TYPES.RECEIVE_SEEN_MESSAGE]:this.onSeenMessageReceived.bind(this),
+            [MESSAGE_TYPES.FILE_MESSAGE_RECEIVE_TO_OTHER_USER]:this.onFileMessageReceiveByOtherUser.bind(this)
         }
     }
 
@@ -344,6 +346,18 @@ export class MessageHandler {
         const {changes,from,messageID} = payload
         this.dataHandler.updateMessage(from,messageID,changes);
         this.visualHandler.readMessage(messageID);
+    }
+
+    onFileMessageReceiveByOtherUser(payload){
+        console.log("File message was delivered  ",payload)
+        const {message,from} = payload;
+        const msgOBJ = new DatabaseMessageModel(message)
+        
+        msgOBJ.fromUser = false;
+        msgOBJ.friend = from;
+
+        this.dataHandler.addMessage(msgOBJ);
+        this.visualHandler.addOneToday(msgOBJ)
     }
 
 

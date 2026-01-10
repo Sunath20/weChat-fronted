@@ -127,3 +127,29 @@ export function getSelectedUsersID(sorted=false){
     }
     return {from,to}
 }
+
+
+/**
+ * Turns the index db request into a promise to reduce the event handling
+ * @param {*} request 
+ * @returns 
+ */
+export function indexDBRequestToFunction(request,objectStore,metaFunctions=null) {
+
+    return new Promise((resolve,reject) => {
+        if(objectStore){
+            request.oncomplete = (event) => {resolve(event)}
+        }
+        request.onsuccess  = (event) => {resolve(event);}
+        request.onerror = (event) => {reject(event)}
+
+        if(metaFunctions){
+            const metaKeys = Object.keys(metaFunctions)
+            
+            for(let i = 0 ; i < metaKeys.length;i++){
+                request[metaKeys[i]] = (event) => { metaFunctions[metaKeys[i]](event) }
+            }
+        }
+
+    })
+}

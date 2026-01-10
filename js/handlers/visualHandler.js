@@ -1,6 +1,7 @@
 import { DatabaseMessageModel, DataHandlerMessageModel, FormattedDataHandlerMessageModel } from "../models.js";
 import { println, query, sortDateKeys } from "../utils.js";
 import { DataHandler } from "./dataHandler.js";
+import { FileHandler } from "./fileHandler.js";
 import { Notification } from "./notification.js";
 
 // import UIkit from "../lib/uikit.js"
@@ -67,6 +68,15 @@ export class VisualHandler {
         this.dataHandler = handler;
     }
 
+
+    /**
+     * Set the file handler
+     * @param {FileHandler} handler 
+     */
+    setFileHandler(handler){
+        this.fileHandler = handler;
+    }
+
  
     /**
      * Update the messages in the current view
@@ -78,6 +88,40 @@ export class VisualHandler {
     updateMessageList(payload,byUser=false,onlyTemplate=false){
     this.messageCount += 1;
     const messageElement = document.createElement('div')
+    console.log(payload.contentType)
+    let text = payload.content
+    if(payload.contentType === "File"){
+        const fileOBJ = JSON.parse(payload.content); 
+        const filePath = payload.messageID + "-"+fileOBJ['fileName']
+        console.log("Reading the file" , filePath)
+        text = fileOBJ['fileName']
+        this.fileHandler.readFile(filePath).then(e => {
+            
+            if(e && e['fileBlob']){
+               this.previewOfTheMessageImage(e['fileBlob'],payload.messageID)
+            }
+
+            if(!e){
+                console.log(payload)
+                 this.fileHandler.retrieveFileFromServer(
+                    payload.roomId,
+                    payload.messageID,
+                    fileOBJ['fileName'],
+                    fileOBJ['mimeType']
+                ).then(x => {
+                    if(x){
+                        const fileName = `${payload.messageID}-${fileOBJ['fileName']}`
+                        this.fileHandler.saveFile(fileName,x)
+                        this.previewOfTheMessageImage(x,payload.messageID)
+                    }
+                    
+                });
+
+
+            }
+        })
+    }
+
     messageElement.className = `message message-by-${payload.fromUser ? 'user' : 'sender' }`
 
     if(payload.userReceivedAt){
@@ -90,7 +134,8 @@ export class VisualHandler {
 
     messageElement.setAttribute('messageID',payload.messageID)
     messageElement.innerHTML = `
-        <h4>${payload.content}</h4>
+        <div class="message-content-if"> </div>
+        <h4>${text}</h4>
         <h6>${payload.timeTag}</h6>
     ` 
 
@@ -121,6 +166,18 @@ export class VisualHandler {
         return messageElement;
     }
     
+    }
+
+
+    previewOfTheMessageImage(fileBlob,messageID){
+                const messageElement = query(`.message[messageID="${messageID}"]`)
+                const type = fileBlob.type
+                if(type.includes("image")){
+                    const msg = messageElement.querySelector(".message-content-if")
+                    const img = document.createElement('img')
+                    img.src = URL.createObjectURL(fileBlob)
+                    msg.appendChild(img)
+                }
     }
 
 
@@ -262,6 +319,8 @@ export class VisualHandler {
      * @param {*} messages 
      */
     updatePreviousMessage(messages){
+
+        if(!messages)return;
 
         const dateKeys = Object.keys(messages)
         sortDateKeys(dateKeys.map(e => e))
