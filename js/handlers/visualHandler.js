@@ -1,8 +1,8 @@
 import { DatabaseMessageModel, DataHandlerMessageModel, FormattedDataHandlerMessageModel } from "../models.js";
-import { println, query, sortDateKeys } from "../utils.js";
+import { FILE_CATEGORY_TYPES, fileTypeToCategory, println, query, sortDateKeys } from "../utils.js";
 import { DataHandler } from "./dataHandler.js";
 import { FileHandler } from "./fileHandler.js";
-import { Notification } from "./notification.js";
+import { Notification, setNotificationsToZero } from "./notification.js";
 
 // import UIkit from "../lib/uikit.js"
 
@@ -15,6 +15,7 @@ const MESSAGE_LIST_CLS_NAME = ".chat-info"
 const SELECTED_PERSON_INFO_CLS = ".contact-info"
 const UPLOAD_PREVIEW_CONTAINER =".uploading-preview"
 
+const FRIEND_LIST_CLS_NAME = ".friend-list"
 /**
  * Responsible for maintain render elements,delete and update elements
  */
@@ -39,6 +40,9 @@ export class VisualHandler {
                 }
             }
         },{root:query("chat-info")})
+
+
+        
     }
 
     /**
@@ -88,38 +92,12 @@ export class VisualHandler {
     updateMessageList(payload,byUser=false,onlyTemplate=false){
     this.messageCount += 1;
     const messageElement = document.createElement('div')
-    console.log(payload.contentType)
+
     let text = payload.content
+
     if(payload.contentType === "File"){
-        const fileOBJ = JSON.parse(payload.content); 
-        const filePath = payload.messageID + "-"+fileOBJ['fileName']
-        console.log("Reading the file" , filePath)
-        text = fileOBJ['fileName']
-        this.fileHandler.readFile(filePath).then(e => {
-            
-            if(e && e['fileBlob']){
-               this.previewOfTheMessageImage(e['fileBlob'],payload.messageID)
-            }
-
-            if(!e){
-                console.log(payload)
-                 this.fileHandler.retrieveFileFromServer(
-                    payload.roomId,
-                    payload.messageID,
-                    fileOBJ['fileName'],
-                    fileOBJ['mimeType']
-                ).then(x => {
-                    if(x){
-                        const fileName = `${payload.messageID}-${fileOBJ['fileName']}`
-                        this.fileHandler.saveFile(fileName,x)
-                        this.previewOfTheMessageImage(x,payload.messageID)
-                    }
-                    
-                });
-
-
-            }
-        })
+        this.visualFileMessage(payload)
+        text = JSON.parse(payload['content'])['fileName']
     }
 
     messageElement.className = `message message-by-${payload.fromUser ? 'user' : 'sender' }`
@@ -136,6 +114,7 @@ export class VisualHandler {
     messageElement.innerHTML = `
         <div class="message-content-if"> </div>
         <h4>${text}</h4>
+        <div class="message-content-if-after-name"> </div>
         <h6>${payload.timeTag}</h6>
     ` 
 
@@ -169,15 +148,103 @@ export class VisualHandler {
     }
 
 
+
+    visualFileMessage(payload){
+        const fileOBJ = JSON.parse(payload.content); 
+        const filePath = payload.messageID + "-"+fileOBJ['fileName']
+        const mimeType = fileOBJ['mimeType']
+      
+        this.fileHandler.readFile(filePath).then(e => {
+            
+            // When the file is in the local storage
+            if(e && e['fileBlob']){
+                if(!mimeType)return;
+                if(mimeType.includes("image")){
+                    this.previewOfTheMessageImage(e['fileBlob'],payload.messageID)
+                }else if(mimeType.includes("video")){
+                    this.previewOfTheVideo(e['fileBlob'],payload.messageID)
+                }else if(mimeType.includes("audio")){
+                    this.previewOfTheAudio(e['fileBlob'],payload.messageID)
+                }else if(mimeType.includes("pdf")){
+                    this.previewOfThePDF(e['fileBlob'],payload.messageID)
+                }
+               
+            }
+
+            // File gonna retrieve from the server
+            if(!e){
+                 this.fileHandler.retrieveFileFromServer(
+                    payload.roomId,
+                    payload.messageID,
+                    fileOBJ['fileName'],
+                    fileOBJ['mimeType']
+                ).then(x => {
+                    if(x){
+                        const fileName = `${payload.messageID}-${fileOBJ['fileName']}`
+                        this.fileHandler.saveFile(fileName,x)
+                        
+                        if(!mimeType)return;
+                        if(mimeType.includes("image")){
+                            this.previewOfTheMessageImage(x,payload.messageID)
+                        }else if(mimeType.includes("video")){
+                            this.previewOfTheVideo(x,payload.messageID)
+                        }else if(mimeType.includes("audio")){
+                            this.previewOfTheAudio(x,payload.messageID)
+                        }else if(mimeType.includes("pdf")){
+                           this.previewOfThePDF(e['fileBlob'],payload.messageID)
+                        }
+                    }
+                });
+            }
+
+
+        })
+    }
+
+
     previewOfTheMessageImage(fileBlob,messageID){
                 const messageElement = query(`.message[messageID="${messageID}"]`)
                 const type = fileBlob.type
-                if(type.includes("image")){
-                    const msg = messageElement.querySelector(".message-content-if")
-                    const img = document.createElement('img')
-                    img.src = URL.createObjectURL(fileBlob)
-                    msg.appendChild(img)
+                const msg = messageElement.querySelector(".message-content-if")
+                const img = document.createElement('img')
+                img.src = URL.createObjectURL(fileBlob)
+                msg.appendChild(img)
+                
+    }
+
+    previewOfThePDF(fileBlob,messageID){
+         const messageElement = query(`.message[messageID="${messageID}"]`)
+                const type = fileBlob.type
+                const msg = messageElement.querySelector(".message-content-if-after-name")
+                const viewButton = document.createElement('button')
+                viewButton.className = "uk-button uk-button-primary"
+                viewButton.innerText = "View the pdf"
+                viewButton.onclick = (event) => {
+                 const pdfURL =  URL.createObjectURL(fileBlob)
+                 window.open(pdfURL)
                 }
+
+                msg.appendChild(viewButton)
+    }
+
+
+    previewOfTheVideo(fileBlob,messageID){
+        const messageElement = query(`.message[messageID="${messageID}"]`)
+        const msg = messageElement.querySelector(".message-content-if")
+        const video = document.createElement('video')
+        video.src = URL.createObjectURL(fileBlob)
+        video.controls = true;
+        msg.appendChild(video)
+    }
+
+
+    previewOfTheAudio(fileBlob,messageID){
+         const messageElement = query(`.message[messageID="${messageID}"]`)
+        const msg = messageElement.querySelector(".message-content-if")
+        const video = document.createElement('audio')
+        video.src = URL.createObjectURL(fileBlob)
+        video.controls = true;
+        msg.appendChild(video)
     }
 
 
@@ -226,7 +293,7 @@ export class VisualHandler {
     }
     this.notificationHandler.notify(messageText,5000,DeleteNotification);
     const notificationSpan =  query(`.friend-notification-counter[contact="${payload['from']}"]`)
-    const numberOfNotifications = this.chatHandler.currentMessageContacts[payload['from']].messageCount
+    const numberOfNotifications = this.dataHandler.notifications[payload.from] //this.chatHandler.currentMessageContacts[payload['from']].messageCount
     notificationSpan.setAttribute('notifications',numberOfNotifications);
     notificationSpan.innerText = `${numberOfNotifications}` 
     }
@@ -322,8 +389,8 @@ export class VisualHandler {
 
         if(!messages)return;
 
-        const dateKeys = Object.keys(messages)
-        sortDateKeys(dateKeys.map(e => e))
+        let dateKeys = Object.keys(messages)
+        dateKeys = sortDateKeys(dateKeys.map(e => e))
 
         for(let i = 0 ; i < dateKeys.length;i++){
             const filter = `.message-list[date="${dateKeys[i]}"]`
@@ -446,7 +513,28 @@ export class VisualHandler {
             element.className="upload-file-instance"
             element.setAttribute('upload-name',file.name)
             element.setAttribute('upload-index',i)
+            
+            let filePreviewElements = ''
+            const fileType = fileTypeToCategory(file.type)
+
+            if(fileType === FILE_CATEGORY_TYPES.IMAGE){
+                const imgBlob = URL.createObjectURL(file)
+                filePreviewElements += `<img src="${imgBlob}" width="300" height="300"/>`
+            }else if(fileType === FILE_CATEGORY_TYPES.VIDEO){
+                const fileBlob = URL.createObjectURL(file)
+                filePreviewElements +=`
+                <video src="${fileBlob}" controls> </video>
+                `
+            }else if(fileType === FILE_CATEGORY_TYPES.PDF){
+                const fileBlob = URL.createObjectURL(file)
+                filePreviewElements += `
+                <embed src="${fileBlob}" type="application/pdf" width="100%" height="500px" />
+                `
+            }
+
+
             const template = `
+               ${filePreviewElements}
                 <h3>${file.name}</h3>
                 <progress class="uk-progress file-share-progress" upload-index="${i}" value="0" max="100"></progress>
             `
@@ -462,6 +550,79 @@ export class VisualHandler {
             const element = query(`.upload-file-instance[upload-index="${index}"]`)
             element.remove()
         },timeout)
+    }
+
+   
+    
+    
+    /**
+     * Clears the all file upload previews
+     */
+    clearFileUploadPreview(){
+        query(".uploading-preview").innerHTML = ``
+        query(".file-drop-zone").style.display = "grid"
+    }
+
+
+    setOnFriendClicked(selectClickedFriend){
+        this.onFriendClicked =  selectClickedFriend;
+        this.onFriendClicked = this.onFriendClicked.bind(this)
+    }
+
+    renderFriends(){
+        // Get the friend list container and set set it to null
+        const friendsContainer = query(FRIEND_LIST_CLS_NAME)
+        friendsContainer.innerHTML = ``
+    
+        // Get the contacts from the storage
+        let contacts = this.dataHandler.contacts;
+       
+        // Define a template so we can loop it
+        function template(details){
+            const parentDiv = document.createElement('div')
+            parentDiv.className = 'friend pointer'
+            parentDiv.setAttribute('friend-contact',details.contact)
+            parentDiv.onclick = this.onFriendClicked(details)
+            parentDiv.innerHTML =`
+                    
+                    <div class="photo">
+                        <img src="./img/userDefault.png"  alt="">
+                    </div>
+    
+                    <div class="info">
+                        <span>${details.name}</span>
+                        <span class="friend-notification-counter uk-badge" notifications="${details.notifications || 0}" contact=${details.contact}>${details.notifications || 0}</span>
+                    </div>
+            
+            
+                    `
+    
+            
+            return parentDiv;
+    
+    
+    
+        }
+        const formatTemplate = template.bind(this)
+        const notifications = this.dataHandler.notifications
+        contacts.map(e => {
+            e['notifications'] = notifications[e.contact]
+            return formatTemplate(e)
+        }
+        ).forEach(e => {
+            friendsContainer.appendChild(e)
+        });
+    
+    }
+    
+    
+    setFriendNotificationsToZero(contact){
+        const badgeElement = query(`.friend-notification-counter[contact="${contact}"]`)
+
+        if(badgeElement){
+            badgeElement.innerText = 0;
+            badgeElement.setAttribute('notifications',0)
+        }
     }
 
 
@@ -481,15 +642,16 @@ class ModalHandler {
     }
 
     showModal(name){
-        if(!this.modals[name].className.includes("uk-open")){
-            this.modals[name].className += " uk-open"
-        }
+        this.modals[name].showModal()
+    }
+
+    setModalSize(name,sizes){
+        this.modals[name].style.width = sizes.width + "px"
+        this.modals[name].style.height = sizes.height + "px"
     }
 
     hideModal(name){
-        if(this.modals[name].className.includes("uk-open")){
-            this.modals[name].className = this.modals[name].className.replace("uk-open")
-        }
+        this.modals[name].close()
     }
 
 

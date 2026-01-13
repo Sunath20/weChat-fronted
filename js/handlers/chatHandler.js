@@ -2,6 +2,7 @@ import { SendMessageDeliveredPayload } from "../clientPayloads.js";
 import { DataHandlerMessageModel, WebSocketMessageModel } from "../models.js";
 import { getCurrentActiveContact, isEmptyObject, println, readData } from "../utils.js";
 import { DataHandler } from "./dataHandler.js";
+import { Notification } from "./notification.js";
 import { APIHandler, MAIN_HANDLERS, MESSAGE_TYPES, WebSocketHandler } from "./requestHandling.js";
 import { VisualHandler } from "./visualHandler.js";
 
@@ -15,9 +16,9 @@ export class ChatHandler {
     constructor(apiHandler){
         this.currentMessageContacts = {}
         this.apiHandler = apiHandler;
-
         this.newMessage = this.newMessage.bind(this)
     }
+
 
     setNotificationHandler(handler){
         this.notificationHandler = handler;
@@ -48,31 +49,36 @@ export class ChatHandler {
     }
 
 
-    /**
+/**
      * When a new message arrived this function will be called
      * @param {WebSocketMessageModel} payload 
      */
     newMessage(payload){
+        console.log("New message was recevied ")
       
         const {from,message} = payload;
 
-        // Check object emptiness and set it to not null and add the message
-        if(isEmptyObject(this.currentMessageContacts[from])){
-            this.currentMessageContacts[from] = {
-                messageCount:0,
-                messages:[]
-            }
-        }
-        this.currentMessageContacts[from]['messages'].push({message});
+        // // Check object emptiness and set it to not null and add the message
+        // if(isEmptyObject(this.currentMessageContacts[from])){
+        //     this.currentMessageContacts[from] = {
+        //         messageCount:0,
+        //         messages:[]
+        //     }
+        // }
+        // this.currentMessageContacts[from]['messages'].push({message});
 
         // Create the class . Easy access to fields
         const msg = new DataHandlerMessageModel(payload)
-        msg.friend = payload['from']
+        const friend = payload['from']
+        msg.friend = friend
         msg.fromUser = false;
         
         // Add the message . And the save it
         this.dataHandler.addMessage(msg);
-        this.currentMessageContacts[from]['messageCount'] += 1;
+        this.dataHandler.calculateLastMessageTimesIf()
+        this.visualHandler.renderFriends()
+
+       
 
         // Send the message delivered request to the server
         const user = getCurrentActiveContact();
@@ -83,13 +89,25 @@ export class ChatHandler {
          inputPayload.time = time
          inputPayload.to = msg.friend
          inputPayload.messageID = msg.messageID
-         this.webSocketHandler.socket.send(JSON.stringify(inputPayload))
 
+       
+
+         this.webSocketHandler.socket.send(JSON.stringify(inputPayload))
+        
+         
 
         //  If the selected user is not the guy message from,notification will be pop up
         // Otherwise message will be added to message list
         if(user['contact'] !== from){
-            this.notificationHandler(payload);
+        
+        if(!this.dataHandler.notifications[friend]){
+            this.dataHandler.notifications[friend] = 1;
+        }else{
+            this.dataHandler.notifications[friend] += 1;
+        } 
+
+        this.notificationHandler(payload);
+        
         }else{
             this.visualHandler.addOneToday(msg)
         }

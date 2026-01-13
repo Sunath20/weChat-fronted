@@ -13,11 +13,50 @@ import { VisualHandler } from "./visualHandler.js";
 export class DataHandler {
 
     constructor(){
+        
         this.messages = readData('messages') || {}
+        this.contacts = readData('contacts');
+        this.notifications = {}
+        
+        this.calculateLastMessageTimesIf = this.calculateLastMessageTimesIf.bind(this)
+        this.calculateLastMessageTimesIf();
+        
         this.updateMessage = this.updateMessage.bind(this)
         this.addMessage = this.addMessage.bind(this)
         this.updateDeliveredMessageTime = this.updateDeliveredMessageTime.bind(this)
     }
+
+    /**
+     * Redefine the contacts base on the last message in order to render in order
+     */
+    calculateLastMessageTimesIf(){
+        if(this.messages && this.contacts){
+            
+            this.contacts = this.contacts.sort((a,b) => {
+                
+                const messagesOne = this.messages[a.contact]
+                if(!messagesOne)return 1;
+
+                const messagesTwo = this.messages[b.contact]
+                if(!messagesTwo)return -1;
+
+                const message1 = messagesOne[messagesOne.length-1]
+                if(!message1)return 1;
+
+                const message2 = messagesTwo[messagesTwo.length-1]
+                if(!message2)return -1;
+                            
+
+                const dateOne = message1['createdAt'] || message1['createdat']
+                const dateTwo = message2['createdAt'] || message2['createdat']
+                console.log((new Date(dateOne)).getTime(),(new Date(dateTwo)).getTime())
+                return ((new Date(dateOne)).getTime() - (new Date(dateTwo)).getTime()) > 0 ? -1 : 1
+
+            })
+        }
+    }
+
+
 
 
     /**

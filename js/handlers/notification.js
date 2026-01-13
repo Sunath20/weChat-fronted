@@ -1,4 +1,5 @@
 import { ChatHandler } from "./chatHandler.js";
+import { DataHandler } from "./dataHandler.js";
 
 const H_POSITIONS = {LEFT:"LEFT",RIGHT:"RIGHT",CENTER:"CENTER"}
 const V_POSITIONS = {TOP:"TOP",CENTER:"CENTER",BOTTOM:"BOTTOM"}
@@ -69,8 +70,8 @@ export class Notification {
  * It will hide automatically.
  * Target - To be called when we select a friend set the notifications to zero.Also reset the notification in the chat handler.
  * @param {string} contactNumber - contact number of the user
- * @param {ChatHandler} chatHandler  - chat handler instance
+ * @param {DataHandler} chatHandler  - chat handler instance
  */
-export function setNotificationsToZero(contactNumber,chatHandler){
-    chatHandler[contactNumber] = {}
+export function setNotificationsToZero(contactNumber,dataHandler){
+    dataHandler.notifications[contactNumber] = 0
 }

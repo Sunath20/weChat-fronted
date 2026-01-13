@@ -109,6 +109,32 @@ export function sortDateKeys(keys){
         keys.splice(yesterdayIndex,1)
     }
 
+    return keys.sort((a,b) => {
+        const [day,month,year] = a.split("/")
+        const [day2,mont2,year2] = b.split("/")
+        
+        if(year > year2){
+            return 1;   
+        }else if(year < year2){
+            return -1;
+        }
+
+        if(month > mont2){
+            return 1;
+        }else if(month < mont2){
+            return -1
+        }
+
+        if(day > day2){
+            return 1;
+        }else if(day < day2){
+            return -1;
+        }
+
+
+
+    })
+
 
 
 }
@@ -152,4 +178,23 @@ export function indexDBRequestToFunction(request,objectStore,metaFunctions=null)
         }
 
     })
+}
+
+
+export const FILE_CATEGORY_TYPES = {
+    IMAGE:1,
+    VIDEO:2,
+    PDF:3,
+    OTHER:4
+}
+export function fileTypeToCategory(fileType){
+    if(fileType.includes("image")){
+        return FILE_CATEGORY_TYPES.IMAGE
+    }else if(fileType.includes("video")){
+        return FILE_CATEGORY_TYPES.VIDEO
+    }else if(fileType.includes("pdf")){
+        return FILE_CATEGORY_TYPES.PDF
+    }
+
+    return FILE_CATEGORY_TYPES.OTHER
 }

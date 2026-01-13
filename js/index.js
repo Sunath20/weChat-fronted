@@ -1,7 +1,7 @@
 
 // Import handlers
 import { ChatHandler } from "./handlers/chatHandler.js"
-import { ClickHandler } from "./handlers/clickHandler.js"
+import { ClickHandler, UIClickHandler } from "./handlers/clickHandler.js"
 import { DataHandler } from "./handlers/dataHandler.js"
 import { DateHandler } from "./handlers/dateHandler.js"
 import { FileHandler, WebFileHandler } from "./handlers/fileHandler.js"
@@ -23,6 +23,7 @@ const visualHandler = new VisualHandler()
 const dataHandler = new DataHandler()
 const dateHandler = new DateHandler()
 const fileHandler = new WebFileHandler()
+const clickHandler = new UIClickHandler()
 
 
 
@@ -31,6 +32,7 @@ messageHandler.setChatHandler(chatHandler);
 messageHandler.setAPIHandler(apiHandler);
 messageHandler.setDataHandler(dataHandler)
 messageHandler.setVisualHandler(visualHandler)
+messageHandler.setWebSocketHandler(webSocket)
 
 visualHandler.setChatHandler(chatHandler)
 visualHandler.setNotificationHandler(notification)
@@ -53,6 +55,10 @@ fileHandler.setVisualHandler(visualHandler)
 fileHandler.setWebSocketHandler(webSocket)
 
 
+clickHandler.setVisualHandler(visualHandler)
+clickHandler.setFileHandler(fileHandler)
+
+
 
 // Passing arguments
 const CHAT_SEND_TEXT_INPUT_CLS_NAME = ".text-input"
@@ -62,7 +68,7 @@ keyboardHandler.setElement(query(CHAT_SEND_TEXT_INPUT_CLS_NAME))
 /**
  * Get all the contacts from the local storage
  */
-const contacts = getContacts()
+const contacts = dataHandler.contacts;
 visualHandler.contacts = contacts;
 
 webSocket.setMainHandler(MAIN_HANDLERS.MESSAGE,messageHandler)
@@ -78,7 +84,7 @@ const saveNewProfileAction = query(".save-new-profile-button")
 function saveNewProfile(){
     const nameInput = document.querySelector(".add-new-profile-name")
     const phoneInput = document.querySelector(".add-new-profile-contact")
-    let profiles = localStorage.getItem('contacts')
+    let profiles = dataHandler.contacts;
     const newProfile = {name:nameInput.value,contact:phoneInput.value}
     if(!profiles){
         profiles = [newProfile]
@@ -102,7 +108,8 @@ function selectClickedFriend(friendDetails){
         // Set the visual setup for the friend
         visualHandler.setCurrentFriend(friendDetails);
         visualHandler.clearChat()
-
+        dataHandler.notifications[friendDetails.contact] = 0
+        visualHandler.setFriendNotificationsToZero(friendDetails.contact)
     
         // Update the selected friend in the storage
         localStorage.setItem('selectedContactInfo',JSON.stringify(friendDetails))
@@ -235,7 +242,7 @@ function sendTextMessageAction(){
 
 
 // ON THE RUN
-const FRIEND_LIST_CLS_NAME = ".friend-list"
+
 
 
 // FRIENDS ACTIONS
@@ -243,46 +250,6 @@ const FRIEND_LIST_CLS_NAME = ".friend-list"
 /**
  * Renders all the contacts in the list
  */
-function renderFriends(){
-    // Get the friend list container and set set it to null
-    const friendsContainer = query(FRIEND_LIST_CLS_NAME)
-    friendsContainer.innerHTML = ``
-
-    // Get the contacts from the storage
-    let contacts = getContacts()
-    
-    // Define a template so we can loop it
-    function template(details){
-        const parentDiv = document.createElement('div')
-        parentDiv.className = 'friend pointer'
-        parentDiv.setAttribute('friend-contact',details.contact)
-        parentDiv.onclick = selectClickedFriend(details)
-        parentDiv.innerHTML =`
-                
-                <div class="photo">
-                    <img src="./img/userDefault.png"  alt="">
-                </div>
-
-                <div class="info">
-                    <span>${details.name}</span>
-                    <span class="friend-notification-counter uk-badge" notifications="0" contact=${details.contact}>0</span>
-                </div>
-        
-        
-                `
-
-        setNotificationsToZero(details.contact,chatHandler);
-        return parentDiv;
-
-
-
-    }
-
-    contacts.map(e => template(e)).forEach(e => {
-        friendsContainer.appendChild(e)
-    });
-
-}
 
 /**
  * Get the last person whom the user had a chat
@@ -357,17 +324,7 @@ inputFilesElement.addEventListener('change',async (event) => {
     if(files.length > 0){
         visualHandler.uploadFilePreviews(files)
         
-        for(let i = 0 ; i < files.length;i++){
-            const file = files[i]
-            const progressElement = query(`.file-share-progress[upload-index="${i}"]`)
-            
-            await fileHandler.fileSendStart(file,(chuck,chucks) => {
-                progressElement.max = chucks;
-                progressElement.value = chuck;
-            })
-
-            visualHandler.clearUploadFilePreviewContainer(i)
-        }
+        
 
     }
 
@@ -381,9 +338,13 @@ inputFilesElement.addEventListener('change',async (event) => {
 // RUN THE MAIN FUNCTIONS
 
 renderSelectedFriendOnStartup();
-renderFriends();
+visualHandler.setOnFriendClicked(selectClickedFriend)
+visualHandler.renderFriends(selectClickedFriend)
 sendTextMessageAction();
 
+
+// Settings the visual handlers
+clickHandler.initClickHandlers()
 
 // Setting the modals
 // visualHandler.modalHandler.registerModal('fileShare',query("#share-a-file"))
@@ -391,4 +352,39 @@ sendTextMessageAction();
 
 fileHandler.init()
 
-fileHandler.retrieveFileFromServer("5db6a1e2-254c-439a-8732-19814fdc26a6","0ebd85dd-6349-4440-adf8-8f4802493905",'WhatsApp Image 2025-11-17 at 13.11.48.jpeg',"image/jpeg");
+// query("dialog").showModal()
+
+
+// INIT All MODALS
+const FILE_INPUT_MODAL_TAG = "file-input-modal"
+const FILE_SHARE_MODAL_CLS_NAME = ".file-share-dialog"
+visualHandler.modalHandler.registerModal(FILE_INPUT_MODAL_TAG,query(FILE_SHARE_MODAL_CLS_NAME))
+visualHandler.modalHandler.setModalSize(FILE_INPUT_MODAL_TAG,{width:800,height:800})
+
+
+
+
+const fileInputZone = query(".file-drop-zone")
+// Utility function to prevent default browser behavior
+function preventDefaults(e) {
+  e.preventDefault();
+  e.stopPropagation();
+}
+
+// Preventing default browser behavior when dragging a file over the container
+fileInputZone.addEventListener('dragover', preventDefaults);
+fileInputZone.addEventListener('dragenter', preventDefaults);
+fileInputZone.addEventListener('dragleave', preventDefaults);
+
+fileInputZone.addEventListener('click',(event) => {
+    document.getElementById("FILES-SHARE_INPUT").click()
+})
+fileInputZone.addEventListener('drop',(event) => {
+    event.preventDefault()
+    event.stopPropagation()
+    fileInputZone.style.display = "none"
+    const files = event.dataTransfer.files
+    visualHandler.uploadFilePreviews(files)
+    fileHandler.setYetToUploadFiles(files)
+    console.log(files)
+})

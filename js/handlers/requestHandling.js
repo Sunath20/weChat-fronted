@@ -1,6 +1,6 @@
 import { ChatHandler } from "./chatHandler.js"
 import { getCurrentActiveContact, matchActiveAndReceivedMessageContact, println, readData } from "../utils.js"
-import { DatabaseMessageModel } from "../models.js"
+import { DatabaseMessageModel, DataHandlerMessageModel } from "../models.js"
 import { DataHandler } from "./dataHandler.js"
 import { VisualHandler } from "./visualHandler.js"
 import { MessageDeliveredPayload } from "../serverPayloads.js"
@@ -348,16 +348,37 @@ export class MessageHandler {
         this.visualHandler.readMessage(messageID);
     }
 
+    /**
+     * Runs when a file message request is created
+     * @param {DataHandlerMessageModel} payload 
+     */
     onFileMessageReceiveByOtherUser(payload){
-        console.log("File message was delivered  ",payload)
+     
         const {message,from} = payload;
         const msgOBJ = new DatabaseMessageModel(message)
-        
+        msgOBJ.from = from;
         msgOBJ.fromUser = false;
         msgOBJ.friend = from;
 
         this.dataHandler.addMessage(msgOBJ);
         this.visualHandler.addOneToday(msgOBJ)
+        this.sendMessageDeliveredToOtherUser(msgOBJ.messageID,from)
+    }
+
+    /**
+     * Send the message delivered
+     * @param {*} payload 
+     */
+    sendMessageDeliveredToOtherUser(messageID,friend){
+        
+        const inputPayload = new SendMessageDeliveredPayload()
+         inputPayload.mainHandler = MAIN_HANDLERS.MESSAGE
+         inputPayload.handlerOne = MESSAGE_TYPES.SET_MESSAGE_DELIVERED
+         const time = (new Date()).toUTCString()
+         inputPayload.time = time
+         inputPayload.to = friend
+         inputPayload.messageID = messageID
+         this.webSocketHandler.socket.send(JSON.stringify(inputPayload))
     }
 
 

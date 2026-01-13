@@ -48,6 +48,11 @@ export class FileHandler {
         this.serverBase = this.apiHandler.getServerBase()
    }
 
+
+   setYetToUploadFiles(files){
+        this.yetToUploadFiles = files;
+   }
+
     /**
      * 
      * @param {File} file 
@@ -90,7 +95,7 @@ export class FileHandler {
         while(offset < file.size){
             const slice = file.slice(offset,offset+chunkSize);
             const buffer = await slice.arrayBuffer()
-            console.log("Sending the chuck number ",chunkIndex+1)
+           
             const response = await  fetch(newURl,{
                 method:"POST",
                 headers:{
@@ -103,7 +108,6 @@ export class FileHandler {
             })
 
             if(!response.ok){
-                console.log("File upload failed.Backing up now")
                 break;
             }
             
@@ -145,8 +149,18 @@ export class FileHandler {
     }
 
 
-
+        /**
+         * Retrieve a media file from the server
+         * Data is comes from a stream
+         * Safe to assume server or the user not gonna get overloaded
+         * @param {string} roomID - room id 
+         * @param {string} messageID - message id
+         * @param {string} fileName - name of the file
+         * @param {string} mimeType - type of the blob file
+         * @returns 
+         */
       async retrieveFileFromServer(roomID,messageID,fileName,mimeType){
+
         const url = this.serverBase + `/files/readFile/${roomID}/${messageID}-${fileName}`
         const response = await fetch(url)
         if(!response.ok)return;
@@ -158,17 +172,11 @@ export class FileHandler {
         while (true){
             const {done,value} = await reader.read()
             
-         
-
             if(done){
-                console.log("File downloaded ",messageID,fileName);
                 break;
             }
-
             receiveLength += value.length;
             chunks.push(value);
-
-
         }
 
         const fullData = new Uint8Array(receiveLength);
@@ -205,12 +213,15 @@ export class WebFileHandler extends FileHandler {
 
     }
 
-
+    /**
+     * Make the connection to the database
+     * Structure will change base on the database version if want
+     * If the read or save requests happens to be , they are executed at last
+     */
     async init(){
         const dbRequest  = indexedDB.open(FILE_DATABASE_NAME,FILE_DATABASE_VERSION)
         dbRequest.onupgradeneeded  = (event) => {
             this.db = event.target.result
-            console.log("Update is need")
             this.onVersionChange()
         }
         const dbResult = await toPromise(dbRequest,{'onupgradeneeded':this.onVersionChange})
@@ -218,6 +229,7 @@ export class WebFileHandler extends FileHandler {
         this.dbOkay = true;
         this.getFileStore()
 
+        // Execute the file read requests
         for(let i = 0 ; i < this.fileReadRequest.length;i++){
             const fileRequest = this.fileReadRequest[i]
             const file = await this.readFile(fileRequest['filePath'])
@@ -226,36 +238,46 @@ export class WebFileHandler extends FileHandler {
         
     }
 
+    /**
+     * On the database creation or version change
+     */
     async onVersionChange(){
-        console.log("Version change running")
         await this.defineStructure()
     }
 
-
+    /**
+     * Define the structure of the database
+     * Mostly used for creating object stores
+     */
     async defineStructure(){
         const fileStoreRequest = this.db.createObjectStore(FILE_INDEX_TAG,{keyPath:"fileName"})
         await toPromise(fileStoreRequest.transaction,true) 
     }
 
 
+    // Save file in the file store
     saveFile(fileName,fileBlob){
         this.getFileStore()
         this.fileStore.add({fileName,fileBlob})
     }
 
-
+    // Get the file store instance
     getFileStore(){
             this.fileStore = this.db.transaction([FILE_INDEX_TAG],'readwrite').objectStore(FILE_INDEX_TAG)
     }
 
 
+    /**
+     * Read a file from the file store
+     * Path of the file must be given - {messageID}-{fileName}
+     * @param {string} filePath 
+     * @returns 
+     */
     async readFile(filePath){
-
         return new Promise( async (resolve,reject)  => {
         if(this.dbOkay){
                     this.getFileStore()
                     try{
-                        console.log(filePath)
                         const file = await toPromise(this.fileStore.get(filePath))
                         resolve(file.target.result)
                     }catch(error){
@@ -267,7 +289,6 @@ export class WebFileHandler extends FileHandler {
                     this.fileReadRequest.push({filePath,callback:(event) => {
                         resolve(event)
                     }})
-                    console.log("Added to the list")
         }
         
     })
