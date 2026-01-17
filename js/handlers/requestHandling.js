@@ -39,10 +39,23 @@ export const FILE_TYPES = {
     'FILE_CREATED':4
 }
 
+
+export const CALL_TYPES = {
+    'CALL_OFFER_CREATED':1,
+    'CALL_OFFER_RECEIVED':2,
+    'CALL_ANSWER_CREATED':3,
+    'CALL_ANSWER_RECEIVED':4,
+    'CALL_ICE_NEW_CANDIDATE_CREATED':5,
+    'CALL_ICE_NEW_CANDIDATE_RECEIVED':6,
+    'CALL_WAS_DISCONNECTED_BY_USER':7,
+    'CALL_WAS_DISCONNECTED_BY_USER_RECEIVED':8
+}
+
 export const MAIN_HANDLERS = {
     'USER_CONFIG':0,
     'FILE_SHARE':1,
     'MESSAGE':2,
+    'CALL':3
 }
 
 
@@ -59,7 +72,7 @@ export class WebSocketHandler {
 
     constructor(){
         // this.userDetails = {'name':"Sunath Thenujaya","contact":"+94702910864"}
-        this.socket = new WebSocket('ws://localhost:3000')
+        this.socket = new WebSocket('wss://192.168.8.202:3000')
         this.socket.onopen = this.onOpen.bind(this)
         this.socket.onmessage = this.onMessage.bind(this)
         this.sendData = this.sendData.bind(this)
@@ -68,6 +81,7 @@ export class WebSocketHandler {
         this.opened = false;
         this.userDetails = JSON.parse(localStorage.getItem('userDetails'))
         this.registerToTheNetwork();
+        
     
     }
 
@@ -80,12 +94,17 @@ export class WebSocketHandler {
     }
 
     registerToTheNetwork(){
+        if(!this.userDetails)return;
         const data = {
             mainHandler:MAIN_HANDLERS.USER_CONFIG,
             handlerOne:USER_HANDLES.NEW_CONNECTION,
             userID:this.userDetails.contact
         }
         this.untilOpens.push(JSON.stringify(data))
+    }
+
+    setHandleCallFunc(func){
+        this.handlingCallFunc = func;
     }
 
     onOpen(){
@@ -134,6 +153,19 @@ export class WebSocketHandler {
      * @param {Object} event 
      */
     onMessage(event){
+        // console.log(event.data,event)
+        if(event.data instanceof Blob){
+            // console.log("Received a blob file")
+            const blobFile = new  Blob([event.data],{type:"audio/webm"})
+            // console.log(blobFile, " This is the blob file")
+            const file = URL.createObjectURL(blobFile)
+            if(this.handlingCallFunc){
+                // console.log(file, " This is our source")
+                this.handlingCallFunc(file)
+            }
+            return;
+        }
+
         const data = JSON.parse(event.data)
         if(data['mainHandler']){
             const handler = this.handlers[data['mainHandler']]
@@ -393,7 +425,7 @@ export class MessageHandler {
 export class APIHandler {
 
     constructor(){
-        this.serverBase = "http://localhost:3000"
+        this.serverBase = "https://192.168.8.202:3000"
     }
 
     /**

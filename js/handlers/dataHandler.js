@@ -15,7 +15,7 @@ export class DataHandler {
     constructor(){
         
         this.messages = readData('messages') || {}
-        this.contacts = readData('contacts');
+        this.contacts = readData('contacts') || [];
         this.notifications = {}
         
         this.calculateLastMessageTimesIf = this.calculateLastMessageTimesIf.bind(this)

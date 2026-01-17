@@ -1,3 +1,5 @@
+
+
 const SELECTED_CONTACT_INFO_NAME = "selectedContactInfo"
 const CONTACTS_INFO_NAME = "contacts"
 
@@ -145,8 +147,12 @@ export function sortDateKeys(keys){
  * @returns 
  */
 export function getSelectedUsersID(sorted=false){
-    const from = readData('userDetails').contact
-    const to = readData('selectedContactInfo').contact
+    const user = readData('userDetails')
+    const from = user ?  user.contact : null
+
+    const selectedUser = readData('selectedContactInfo')
+    const to = selectedUser ? selectedUser.contact : null
+
     if(sorted){
         const [personOne,personTwo] = [from,to].sort()
         return {personOne,personTwo}

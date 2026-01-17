@@ -3,6 +3,7 @@ import { FILE_CATEGORY_TYPES, fileTypeToCategory, println, query, sortDateKeys }
 import { DataHandler } from "./dataHandler.js";
 import { FileHandler } from "./fileHandler.js";
 import { Notification, setNotificationsToZero } from "./notification.js";
+import { TabHandler } from "./tabHandler.js";
 
 // import UIkit from "../lib/uikit.js"
 
@@ -16,6 +17,30 @@ const SELECTED_PERSON_INFO_CLS = ".contact-info"
 const UPLOAD_PREVIEW_CONTAINER =".uploading-preview"
 
 const FRIEND_LIST_CLS_NAME = ".friend-list"
+
+
+
+
+
+// CALL Details
+const CALL_RECEIVER_NAME_CLS = ".call-receiver-name"
+const CALL_RECEIVER_PHONE_CLS = ".call-receiver-contact"
+const CALL_RECEIVER_STATE_CLS = ".call-receiver-state" 
+
+const CALL_INCOMING_NAME_CLS = ".call-incoming-name"
+const CALL_INCOMING_PHONE_CLS = ".call-incoming-phone"
+
+const CALL_END_USERNAME_TEXT_CLS = ".call-ended-by-user"
+
+
+
+// Dialog TAGS
+const MODAL_TAG_CALL_DIALOG = "call-dialog"
+
+
+// Tab TAGS
+const TAB_CALL_TAG = "call-tag"
+
 /**
  * Responsible for maintain render elements,delete and update elements
  */
@@ -28,6 +53,7 @@ export class VisualHandler {
         this.messageCount = messageCount;
         this.contacts = contacts;
         this.modalHandler = new ModalHandler();
+        this.tabHandler = new TabHandler()
         
         // Add the observer
         // Remove the observer as soon as it captures an event
@@ -40,6 +66,12 @@ export class VisualHandler {
                 }
             }
         },{root:query("chat-info")})
+
+
+
+        // Set the tabs
+        // Setting the tabs
+        this.tabHandler.registerTab(TAB_CALL_TAG, query(".call-dialog"))
 
 
         
@@ -605,6 +637,7 @@ export class VisualHandler {
         }
         const formatTemplate = template.bind(this)
         const notifications = this.dataHandler.notifications
+        if(!contacts)return;
         contacts.map(e => {
             e['notifications'] = notifications[e.contact]
             return formatTemplate(e)
@@ -626,6 +659,41 @@ export class VisualHandler {
     }
 
 
+
+    // Call Views
+
+    initCallerDialogWithUserInfo(userInfo){
+        const {name,contact,state} = userInfo;
+        query(CALL_RECEIVER_NAME_CLS).innerText = name;
+        query(CALL_RECEIVER_PHONE_CLS).innerText = contact;
+        query(CALL_RECEIVER_STATE_CLS).innerText = state;
+        this.tabHandler.showTab(TAB_CALL_TAG,'1')
+        this.modalHandler.showModal(MODAL_TAG_CALL_DIALOG)
+    }
+
+    initCallReceiverDialogWithUserInfo(userInfo){
+        const {name,contact} = userInfo
+        query(CALL_INCOMING_NAME_CLS).innerText = name;
+        query(CALL_INCOMING_PHONE_CLS).innerText = contact;
+        this.setCallTab('2')
+        this.openCallDialog()
+    }
+
+    openCallDialog(){
+        this.modalHandler.showModal(MODAL_TAG_CALL_DIALOG)
+    }
+
+    setCallTab(index){
+        this.tabHandler.showTab(TAB_CALL_TAG,index)
+    }
+
+    closeCallDialog(){
+        this.modalHandler.hideModal(MODAL_TAG_CALL_DIALOG)
+    }
+
+    updateCallEndedBy(endedBy){
+        query(CALL_END_USERNAME_TEXT_CLS).innerText = `Call ended by ${endedBy}`
+    }
 
 }
 

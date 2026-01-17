@@ -6,6 +6,7 @@
     <title>Document</title>
     <link rel="stylesheet" href="./css/components/modal.css">
     <link rel="stylesheet" href="./css/components/notification.css">
+    <link rel="stylesheet" href="./css/components/call-dialog.css">
     <link rel="stylesheet" href="./css/style.css">
     <link rel="stylesheet" href="./css/lib/uikit.min.css">
     <!-- <link rel="stylesheet" href="./css/"> -->
@@ -13,19 +14,7 @@
 
 </head>
 <body>
-    
-    <!-- <input type="text" class="from">
-    <input type="text" class="to">
-    <input type="text" class="msg">
 
-    <button class="send">Send</button>
-    <button class="register">Register</button>
-    <button class="createRoom">Create the Room</button> -->
-
-
-    <!-- <button class="reconnect">Reconnect</button> -->
-
-    <!-- <div class="messages">
 
     </div> -->
 
@@ -74,8 +63,8 @@
             <div class="action-info">
                 
                 <ul class="uk-iconnav">
-                    <li><a href="#" uk-icon="icon:  video-camera"></a></li>
-                    <li><a href="#" uk-icon="icon: receiver"></a></li>
+                    <li><a href="#" uk-icon="icon:  receiver" class="selected-user-call-audio"></a></li>
+                    <li><a href="#" uk-icon="icon:  video-camera" class="selected-user-call"></a></li>
                     <li><a href="#"><span uk-icon="icon:  more-vertical"></span> (2)</a></li>
                 </ul>
 
@@ -194,13 +183,103 @@
   </dialog>
 
 
+<dialog class="call-dialog" >
+
+    <div class="call-outgoing tab-child" index="1">
+
+        <div class="call-profile-pic">
+            <img src="./img/userDefault.png" alt="">
+        </div>
+
+        <div class="call-detail-info">
+            <h4 class="call-receiver-name">Username</h4>
+            <h5 class="call-receiver-contact">Phone Number</h5>
+            <h5 class="call-receiver-state">State</h5>
+        </div>
+
+        <div class="call-actions call-outgoing-actions">
+            <button class="uk-button uk-button-danger call-cancel-before-answer">Cancel Call</button>
+        </div>
+
+
+    </div>
+
+    <div class="call-incoming tab-child" index="2">
+
+        <div class="call-profile-pic" >
+            <img src="./img/userDefault.png" alt="">
+        </div>
+    
+        <div class="call-detail-info call-caller-details">
+            <h4 class="call-incoming-name">Username</h4>
+            <h5 class="call-incoming-phone">Phone Number</h5>
+        </div>
+
+        <div class="call-actions  call-receiver-actions">
+            <button class="uk-button uk-button-danger">Reject</button>
+            <button class="uk-button uk-button-primary call-receiver-accept-button">Accept</button>
+        </div>
+
+    </div>
+
+
+    <div class="call-in tab-child" index="3">
+
+        <div class="call-detail-info">
+            <video autoplay class="call-other-user-video"></video>
+        </div>
+
+        <div class="call-actions">
+            <button class="uk-button uk-button-danger end-call-button">End Call</button>
+        </div>
+
+
+    </div>
+
+    <div class="call-in-audio-only tab-child" index="5">
+        
+        <div class="call-profile-pic" >
+                    <img src="./img/userDefault.png" alt="">
+        </div>
+
+        <div class="call-detail-info">
+            <h4 class="call-audio-receiver-name">Username</h4>
+            <h5 class="call-audio-receiver-contact">Phone Number</h5>
+            <h5 class="call-audio-receiver-state">Connected</h5>
+            <audio autoplay class="call-only-audio-audio"></audio>
+        </div>
+
+        <div class="call-actions">
+            <button class="uk-button uk-button-danger end-only-audio-call-button">End Call</button>
+        </div>
+    </div>
+
+    <div class="call-end tab-child" index="4">
+        
+        <div class="call-end-user-details">
+            <h4 class="call-ended-by-user">Call Was disconnected by other user</h4>
+        </div>
+
+        <div class="call-end-actions">
+            <button class="uk-button uk-button-danger call-disconnected-close">Close</button>
+        </div>
+
+    </div>
+
+
+    
+  </dialog> 
+
+
 
     <script src="./js/lib/uikit.min.js"></script>
     <script src="./js/lib/uikit-icons.min.js"></script>
     <!-- <script src="https://kit.fontawesome.com/b8b79f3a7b.js" crossorigin="anonymous"></script> -->
      <script src="./js/utils.js" type="module"></script>
-    <script src="./js/handlers/requestHandling.js" type="module"></script>
-        <script src="./js/handlers/chatHandler.js" type="module"></script>
+    
+     <script src="./js/handlers/requestHandling.js" type="module"></script>
+    <script src="./js/handlers/chatHandler.js" type="module"></script>
+    <script src="./js/handlers/dataHandler.js" type="module"></script>
     <script src="./js/index.js" type="module"></script>
 
     <script>

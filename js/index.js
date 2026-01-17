@@ -1,5 +1,6 @@
 
 // Import handlers
+import { CallHandler } from "./handlers/callHandler.js"
 import { ChatHandler } from "./handlers/chatHandler.js"
 import { ClickHandler, UIClickHandler } from "./handlers/clickHandler.js"
 import { DataHandler } from "./handlers/dataHandler.js"
@@ -11,7 +12,14 @@ import {WebSocketHandler,MessageHandler, MAIN_HANDLERS,APIHandler} from "./handl
 import {VisualHandler} from "./handlers/visualHandler.js"
 import { DatabaseMessageModel, DataHandlerMessageModel } from "./models.js"
 
-import { getContacts, println, query, readData } from "./utils.js"
+import { getContacts, getSelectedUsersID, println, query, readData } from "./utils.js"
+
+const {from} = getSelectedUsersID()
+
+if(!from){
+    window.location.href = "/login.html"
+}
+
 
 const webSocket = new WebSocketHandler()
 const messageHandler = new MessageHandler()
@@ -24,6 +32,7 @@ const dataHandler = new DataHandler()
 const dateHandler = new DateHandler()
 const fileHandler = new WebFileHandler()
 const clickHandler = new UIClickHandler()
+const callHandler = new CallHandler()
 
 
 
@@ -59,6 +68,11 @@ clickHandler.setVisualHandler(visualHandler)
 clickHandler.setFileHandler(fileHandler)
 
 
+callHandler.setWebSocketHandler(webSocket);
+callHandler.setVisualHandler(visualHandler)
+callHandler.setDataHandler(dataHandler)
+
+
 
 // Passing arguments
 const CHAT_SEND_TEXT_INPUT_CLS_NAME = ".text-input"
@@ -72,6 +86,7 @@ const contacts = dataHandler.contacts;
 visualHandler.contacts = contacts;
 
 webSocket.setMainHandler(MAIN_HANDLERS.MESSAGE,messageHandler)
+webSocket.setMainHandler(MAIN_HANDLERS.CALL,callHandler)
 
 
 // SAVE NEW PROFILE
@@ -89,13 +104,12 @@ function saveNewProfile(){
     if(!profiles){
         profiles = [newProfile]
     }else{
-        profiles = JSON.parse(profiles);
         profiles.push(newProfile)
     }
 
     localStorage.setItem('contacts',JSON.stringify(profiles))
 
-    renderFriends()
+    visualHandler.renderFriends()
 }
 saveNewProfileAction.addEventListener('click',saveNewProfile);
 
@@ -126,15 +140,7 @@ function selectClickedFriend(friendDetails){
                     friendDetails['contact'],
                     readData('userDetails')['contact']
                 ).then(e => e.json()).then(e => {
-                    // e.forEach(e => {
-                    //     const fromUser = e['sentbyid'] !== friendDetails['contact']
-                    //     const dataHandlerObject = new DataHandlerMessageModel(e)
-                    //     dataHandlerObject.fromUser = fromUser;
-                    //     dataHandlerObject.friend = friendDetails['contact']
-                    //     dataHandler.addMessage(dataHandlerObject);
-                    //     visualHandler.updateMessageList(dataHandlerObject,fromUser);
-                    // })
-
+                    if(!e)return;
                     const msgs = dataHandler.reformatMessages(e.map(x => {
                      const msgData =    new DataHandlerMessageModel(x)
                      const fromUser = x['sentbyid'] !== friendDetails['contact']
@@ -174,7 +180,7 @@ function selectClickedFriend(friendDetails){
                    return m;
                 })
 
-                console.info("New Messages ",mappedMessages)
+             
 
                 mappedMessages.forEach(e => {
                     dataHandler.addMessage(e);
@@ -204,14 +210,8 @@ function selectClickedFriend(friendDetails){
                     }
                 })
         })}
-            
-            
-            // dataHandler.updateNotDeliveredMessages(friendDetails['contact'])
-
-       
-
+        
         chatHandler.currentMessageContacts[friendDetails.contact] = {}
-
     }
 }
 
@@ -222,17 +222,16 @@ const SEND_MSG_CLS_NAME = ".send-message-action"
 const SEND_MSG_INPUT_CLS_NAME = ".send-message-input"
 function sendTextMessageAction(){
         const user = readData('selectedContactInfo')
-        query(SEND_MSG_CLS_NAME).addEventListener('click',function(event) {
+        const sendMessageElement = query(SEND_MSG_CLS_NAME)
+        if(user && sendMessageElement){
+        sendMessageElement.addEventListener('click',function(event) {
         const input = query(SEND_MSG_INPUT_CLS_NAME);
         webSocket.sendTextMessage(input.value,user.contact)
-        // const data = {message:input.value}
-        // const msg = new DataHandlerMessageModel({content:input.value,friend:user.contact,createdAt:(new Date()).toUTCString()})
-        // msg.fromUser = true;
-        // msg.friend = user.contact
-        // visualHandler.updateMessageList(msg,true)
-        // dataHandler.addMessage(msg)
         input.value = ``
     })
+        }
+
+     
 
 
 }
@@ -285,16 +284,6 @@ keyboardHandler.setOnEnter((event) => {
         const input = query(SEND_MSG_INPUT_CLS_NAME);
         webSocket.sendTextMessage(input.value,user.contact)
         const data = {message:input.value}
-        // const msg = new DataHandlerMessageModel({
-        //     content:input.value,friend:user.contact,createdAt:(new Date()).toUTCString()})
-        
-        // msg.fromUser = true;
-        // msg.friend = user.contact
-
-        // const updatedMessage = dataHandler.reformatMessages([msg])[0]
-
-        // visualHandler.addOneToday(updatedMessage,true)
-        // dataHandler.addMessage(msg)
         input.value = ``
         
         
@@ -346,6 +335,8 @@ sendTextMessageAction();
 // Settings the visual handlers
 clickHandler.initClickHandlers()
 
+
+
 // Setting the modals
 // visualHandler.modalHandler.registerModal('fileShare',query("#share-a-file"))
 // visualHandler.modalHandler.showModal('fileShare')
@@ -358,8 +349,17 @@ fileHandler.init()
 // INIT All MODALS
 const FILE_INPUT_MODAL_TAG = "file-input-modal"
 const FILE_SHARE_MODAL_CLS_NAME = ".file-share-dialog"
+
+const CALL_DIALOG_MODAL_TAG = "call-dialog"
+const CALL_DIALOG_CLS_NAME = ".call-dialog"
+
 visualHandler.modalHandler.registerModal(FILE_INPUT_MODAL_TAG,query(FILE_SHARE_MODAL_CLS_NAME))
+visualHandler.modalHandler.registerModal(CALL_DIALOG_MODAL_TAG,query(CALL_DIALOG_CLS_NAME))
+
+
 visualHandler.modalHandler.setModalSize(FILE_INPUT_MODAL_TAG,{width:800,height:800})
+
+
 
 
 
@@ -386,5 +386,55 @@ fileInputZone.addEventListener('drop',(event) => {
     const files = event.dataTransfer.files
     visualHandler.uploadFilePreviews(files)
     fileHandler.setYetToUploadFiles(files)
-    console.log(files)
+})
+
+
+// Calling
+const SELECTED_USER_CALL_BUTTON_CLS_NAME = ".selected-user-call"
+const CALL_CLOSED_BEFORE_BUTTON_CLS_NAME = ".call-cancel-before-answer"
+const CALL_ONLY_AUDIO_BUTTON_CLS_NAME = ".selected-user-call-audio"
+
+query(SELECTED_USER_CALL_BUTTON_CLS_NAME).addEventListener('click',async (event) => {
+    const data = readData('selectedContactInfo')
+    data['state'] = "Calling..."
+    const stream = await navigator.mediaDevices.getUserMedia({video:true,audio:true})
+    await callHandler.initCall(stream)
+    visualHandler.initCallerDialogWithUserInfo(data)
+})
+
+query(CALL_ONLY_AUDIO_BUTTON_CLS_NAME).addEventListener('click',async (event) => {
+    const data = readData('selectedContactInfo')
+    data['state'] = "Calling..."
+    const stream = await navigator.mediaDevices.getUserMedia({audio:true})
+    await callHandler.initCall(stream,true)
+    visualHandler.initCallerDialogWithUserInfo(data);
+})
+
+query(CALL_CLOSED_BEFORE_BUTTON_CLS_NAME).addEventListener('click',(event) => {
+    visualHandler.modalHandler.hideModal(CALL_DIALOG_MODAL_TAG)
+})
+
+
+const CALL_ACCEPT_BUTTON_CLS_NAME = ".call-receiver-accept-button"
+
+query(CALL_ACCEPT_BUTTON_CLS_NAME).addEventListener('click',async (event) => {
+   await callHandler.answerEventByReceiver()
+})
+
+const CALL_CLOSE_BUTTON_CLS_NAME = ".end-call-button"
+
+query(CALL_CLOSE_BUTTON_CLS_NAME).addEventListener('click',(event) => {
+    callHandler.closeCall()
+})
+
+
+const CALL_DISCONNECTED_BUTTON_CLS_NAME = ".call-disconnected-close"
+query(CALL_DISCONNECTED_BUTTON_CLS_NAME).addEventListener('click',(event) => {
+    callHandler.closeCall()
+})
+
+
+const CALL_ONLY_AUDIO_DISCONNECTED_BUTTON_CLS_NAME = ".end-only-audio-call-button"
+query(CALL_ONLY_AUDIO_DISCONNECTED_BUTTON_CLS_NAME).addEventListener('click',(event) => {
+    callHandler.closeCall()
 })

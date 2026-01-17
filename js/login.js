@@ -1,5 +1,6 @@
 import {APIHandler} from "./handlers/requestHandling.js"
 
+const apiHandler = new APIHandler()
 
 
 const SIGN_CONTAINER_CLS_NAME = ".sign-up"
@@ -54,10 +55,11 @@ const OTP_INPUT_FIELD_CLS_NAME = ".otp-validator"
  * @param {APIHandler} apiHandler 
  */
 async function sendOTPValue(apiHandler,contactNumber){
-    const response = await apiHandler.generateOTPForUser(contactNumber)
-    const status = response.status
-    const returnValue = await response.json()
-    return returnValue;
+        const response = await apiHandler.generateOTPForUser(contactNumber)
+        const status = response.status
+        const returnValue = await response.json()
+        console.log("This is the password for now ",returnValue)
+        return returnValue;  
 }
 
 
@@ -78,6 +80,31 @@ function getOTPValues(){
 let currentUser = ""
 
 
+async function renderOTPValue(key){
+     document.querySelector(SIGN_CONTAINER_CLS_NAME).className = "sign-up hide"
+      document.querySelector(OTP_VALIDATION_CONTAINER_CLS_NAME).className = "otp-validation"
+        try{
+            const response = await sendOTPValue(apiHandler,key)
+            
+            UIkit.notification({
+                message: 'OTP Has been sent',
+                status: 'primary',
+                pos: 'top-center',
+                timeout: 5000
+            });
+
+        }catch(error){
+            console.error(error)
+            UIkit.notification({
+                message: 'OTP Sending has been failed',
+                status: 'danger',
+                pos: 'top-center',
+                timeout: 5000
+            });
+
+        }
+}
+
 async function onStart(){
 
     const apiHandler = new APIHandler()
@@ -97,8 +124,10 @@ async function onStart(){
             document.title = "Sign In"
            
     })
+    
     // Switch to sign up
     document.querySelector(SWITCH_ACTION_TO_SIGN_UP_CLS_NAME).addEventListener('click',(event) => {
+        console.log("Switch upto sign up form right now")
             signUpFields.className = "fields sign-up-fields"
             signInFields.className = "fields sign-in-fields hide"
 
@@ -106,6 +135,8 @@ async function onStart(){
             signInActions.className = "actions sign-in-actions hide"
             document.title = "Sign Up"
     })
+
+
     // Sign Up User 
     document.querySelector(SIGN_UP_ACTION_BUTTON_CLS_NAME).addEventListener('click',async (event) => {
             try{
@@ -118,6 +149,8 @@ async function onStart(){
                     console.log(response.data.error)
                 }else if(statusCode === 201){
                     const createdUser = response[0]
+                    await renderOTPValue(payload['contactNumber'])
+                    currentUser = payload['contactNumber']
                 }
              
             }catch(error){
@@ -126,14 +159,13 @@ async function onStart(){
         
         
     })
+
+
     // Sign in user
-    document.querySelector(SIGN_IN_ACTIONS_CLS_NAME).addEventListener('click',async (event) => {
+    document.querySelector(SIGN_IN_ACTION_BUTTON_CLS_NAME).addEventListener('click',async (event) => {
       const key = document.querySelector(".login-contact-number").value;
       currentUser = key;
-      document.querySelector(SIGN_CONTAINER_CLS_NAME).className = "sign-up hide"
-      document.querySelector(OTP_VALIDATION_CONTAINER_CLS_NAME).className = "otp-validation"
-        const response = await sendOTPValue(apiHandler,key)
-        console.log(response)
+      await renderOTPValue(key)
     }) 
 
     // OTP Field Change On Key
@@ -176,3 +208,4 @@ async function onStart(){
 }
 
 onStart()
+
