@@ -66,6 +66,7 @@ fileHandler.setWebSocketHandler(webSocket)
 
 clickHandler.setVisualHandler(visualHandler)
 clickHandler.setFileHandler(fileHandler)
+clickHandler.setCallHandler(callHandler)
 
 
 callHandler.setWebSocketHandler(webSocket);
@@ -386,55 +387,4 @@ fileInputZone.addEventListener('drop',(event) => {
     const files = event.dataTransfer.files
     visualHandler.uploadFilePreviews(files)
     fileHandler.setYetToUploadFiles(files)
-})
-
-
-// Calling
-const SELECTED_USER_CALL_BUTTON_CLS_NAME = ".selected-user-call"
-const CALL_CLOSED_BEFORE_BUTTON_CLS_NAME = ".call-cancel-before-answer"
-const CALL_ONLY_AUDIO_BUTTON_CLS_NAME = ".selected-user-call-audio"
-
-query(SELECTED_USER_CALL_BUTTON_CLS_NAME).addEventListener('click',async (event) => {
-    const data = readData('selectedContactInfo')
-    data['state'] = "Calling..."
-    const stream = await navigator.mediaDevices.getUserMedia({video:true,audio:true})
-    await callHandler.initCall(stream)
-    visualHandler.initCallerDialogWithUserInfo(data)
-})
-
-query(CALL_ONLY_AUDIO_BUTTON_CLS_NAME).addEventListener('click',async (event) => {
-    const data = readData('selectedContactInfo')
-    data['state'] = "Calling..."
-    const stream = await navigator.mediaDevices.getUserMedia({audio:true})
-    await callHandler.initCall(stream,true)
-    visualHandler.initCallerDialogWithUserInfo(data);
-})
-
-query(CALL_CLOSED_BEFORE_BUTTON_CLS_NAME).addEventListener('click',(event) => {
-    visualHandler.modalHandler.hideModal(CALL_DIALOG_MODAL_TAG)
-})
-
-
-const CALL_ACCEPT_BUTTON_CLS_NAME = ".call-receiver-accept-button"
-
-query(CALL_ACCEPT_BUTTON_CLS_NAME).addEventListener('click',async (event) => {
-   await callHandler.answerEventByReceiver()
-})
-
-const CALL_CLOSE_BUTTON_CLS_NAME = ".end-call-button"
-
-query(CALL_CLOSE_BUTTON_CLS_NAME).addEventListener('click',(event) => {
-    callHandler.closeCall()
-})
-
-
-const CALL_DISCONNECTED_BUTTON_CLS_NAME = ".call-disconnected-close"
-query(CALL_DISCONNECTED_BUTTON_CLS_NAME).addEventListener('click',(event) => {
-    callHandler.closeCall()
-})
-
-
-const CALL_ONLY_AUDIO_DISCONNECTED_BUTTON_CLS_NAME = ".end-only-audio-call-button"
-query(CALL_ONLY_AUDIO_DISCONNECTED_BUTTON_CLS_NAME).addEventListener('click',(event) => {
-    callHandler.closeCall()
 })

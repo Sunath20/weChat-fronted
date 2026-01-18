@@ -1,4 +1,5 @@
-import {query} from "../utils.js"
+import {query, readData} from "../utils.js"
+import { CallHandler } from "./callHandler.js";
 import { FileHandler } from "./fileHandler.js";
 import { VisualHandler } from "./visualHandler.js";
 
@@ -42,10 +43,22 @@ const FILE_UPLOAD_ACTIONS_CLS_NAME = ""
 
 const FILE_INPUT_MODAL_TAG = "file-input-modal"
 
+
+// Call handling
+const CALL_VIDEO_CALL_START_BUTTON_CLS_NAME = ".selected-user-call"
+const CALL_AUDIO_ONLY_START_BUTTON_CLS_NAME = ".selected-user-call-audio"
+const CALL_CANCEL_WHILE_RING_BUTTON_CLS_NAME = ".call-cancel-before-answer"
+const CALL_ACCEPT_BY_RECEIVER_BUTTON_CLS_NAME = ".call-receiver-accept-button"
+const CALL_CLOSE_BUTTON_BY_USER_CLS_NAME = ".end-call-button"
+const CALL_AUDIO_ONLY_FINISH_CLS_NAME = ".call-disconnected-close"
+const CALL_ONLY_AUDIO_DISCONNECTED_BUTTON_CLS_NAME = ".end-only-audio-call-button"
+
 export class UIClickHandler extends ClickHandler {
 
     constructor(){
         super()
+
+        // File upload events
         this.onFileMenuClick = this.onFileMenuClick.bind(this)
         this.onVideoUploadDialogClick = this.onVideoUploadDialogClick.bind(this)
         this.onClosingFileUploadClick = this.onClosingFileUploadClick.bind(this)
@@ -53,6 +66,16 @@ export class UIClickHandler extends ClickHandler {
         this.onPictureUploadDialogClicked = this.onPictureUploadDialogClicked.bind(this)
         this.onVideoUploadDialogClick = this.onVideoUploadDialogClick.bind(this)
         this.onPDFFileUploadDialogClick = this.onPDFFileUploadDialogClick.bind(this)
+
+        // Calling UI Events
+
+        this.onVideoCallButtonClick = this.onVideoCallButtonClick.bind(this)
+        this.onAudioCallClicked = this.onAudioCallClicked.bind(this)
+        this.onCancelCallBeforeAnswer = this.onCancelCallBeforeAnswer.bind(this)
+        this.onCallAcceptByReceiver = this.onCallAcceptByReceiver.bind(this)
+        this.callCloseButtonClick = this.callCloseButtonClick.bind(this)
+        this.callCloseDialogAtEndOfTheCall = this.callCloseDialogAtEndOfTheCall.bind(this)
+        this.callCancelAudioOnlyClicked  = this.callCancelAudioOnlyClicked.bind(this)
     }
 
     /**
@@ -71,6 +94,14 @@ export class UIClickHandler extends ClickHandler {
         this.fileHandler = handler;
     }
 
+    /**
+     * set the call handler
+     * @param {CallHandler} handler 
+     */
+    setCallHandler(handler){
+        this.callHandler = handler;
+    }
+
 
     initClickHandlers(){
         this.setOnClick(query(FILE_MENU_DIALOG_CLS_NAME),this.onFileMenuClick)
@@ -85,7 +116,13 @@ export class UIClickHandler extends ClickHandler {
         this.setOnClick(query(PDF_UPLOAD_ACTIONS_CLS_NAME),this.onPDFFileUploadDialogClick)
         
         // this.setOnClick(query(AUDIO_UPLOAD_ACTIONS_CLS_NAME),t)
-
+        this.setOnClick(query(CALL_VIDEO_CALL_START_BUTTON_CLS_NAME),this.onVideoCallButtonClick)
+        this.setOnClick(query(CALL_AUDIO_ONLY_START_BUTTON_CLS_NAME),this.onAudioCallClicked)
+        this.setOnClick(query(CALL_CANCEL_WHILE_RING_BUTTON_CLS_NAME),this.onCancelCallBeforeAnswer)
+        this.setOnClick(query(CALL_ACCEPT_BY_RECEIVER_BUTTON_CLS_NAME),this.onCallAcceptByReceiver)
+        this.setOnClick(query(CALL_CLOSE_BUTTON_BY_USER_CLS_NAME),this.callCloseButtonClick)
+        this.setOnClick(query(CALL_AUDIO_ONLY_FINISH_CLS_NAME),this.callCloseDialogAtEndOfTheCall)
+        this.setOnClick(query(CALL_ONLY_AUDIO_DISCONNECTED_BUTTON_CLS_NAME),this.callCancelAudioOnlyClicked)
     }
     
     onFileMenuClick(){
@@ -137,7 +174,68 @@ export class UIClickHandler extends ClickHandler {
         },2000)
     }
 
-  
+    /**
+     * Starts the video call
+     * @param {*} event 
+     */
+    async onVideoCallButtonClick(event){
+            const data = readData('selectedContactInfo')
+            data['state'] = "Calling..."
+            const stream = await navigator.mediaDevices.getUserMedia({video:true,audio:true})
+            await this.callHandler.initCall(stream)
+            this.visualHandler.initCallerDialogWithUserInfo(data)
+    }
+
+    /**
+     * Starts the audio call
+     */
+    async onAudioCallClicked(event){
+           const data = readData('selectedContactInfo')
+            data['state'] = "Calling..."
+            const stream = await navigator.mediaDevices.getUserMedia({audio:true})
+            await this.callHandler.initCall(stream,true)
+            this.visualHandler.initCallerDialogWithUserInfo(data);
+    }
+
+    /**
+     * Cancels the call before answering
+     * @param {*} event 
+     */
+    async onCancelCallBeforeAnswer(event){
+        this.visualHandler.closeCallDialog()
+    }
+
+    /**
+     * Accept the call by the receiver
+     * @param {*} event 
+     */
+    async onCallAcceptByReceiver(event){
+          await this.callHandler.answerEventByReceiver()
+    }
+
+    /**
+     * Close button clicked while in the call
+     * @param {*} event 
+     */
+    async callCloseButtonClick(event){
+        await this.callHandler.closeCall()
+    }
+
+    /**
+     * close the audio call
+     * @param {*} event 
+     */
+    async callCloseDialogAtEndOfTheCall(event){
+        await this.visualHandler.closeCallDialog()
+    }
+
+    /**
+     * Close the audio only call
+     * @param {*} event 
+     */
+    async callCancelAudioOnlyClicked(event){
+        await this.callHandler.closeCall()
+    }
     
 
 }

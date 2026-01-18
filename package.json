@@ -1,0 +1,20 @@
+{
+  "name": "socket-testing",
+  "version": "1.0.0",
+  "main": "test_two.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Sunath20/weChat-fronted.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Sunath20/weChat-fronted/issues"
+  },
+  "homepage": "https://github.com/Sunath20/weChat-fronted#readme",
+  "description": ""
+}
