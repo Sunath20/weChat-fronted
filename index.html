@@ -9,158 +9,230 @@
     <link rel="stylesheet" href="./css/components/call-dialog.css">
     <link rel="stylesheet" href="./css/style.css">
     <link rel="stylesheet" href="./css/lib/uikit.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=close" />
     <!-- <link rel="stylesheet" href="./css/"> -->
     
 
 </head>
 <body>
 
+    <div class="main-container">
+        
+        <div class="left-side-of-app tab-container">
+           
+            <div class="friends tab-child left-side-app-tab" index="1">
+                            <div class="search-bar">
+                                
+                                <div class="menu-bar pointer">
+                                    <a uk-icon="table" class="open-setting-button" ></a>
+                                </div>
 
-    </div> -->
+                                <div class="search-input">
+                                    
+                                    <form class="uk-search uk-search-default">
+                                        <input class="uk-search-input" type="search" placeholder="Search" aria-label="Search">
+                                        <span class="uk-search-icon-flip" uk-search-icon></span>
+                                    </form>
 
-    <div class="friends">
-        <div class="search-bar">
-            
-            <div class="menu-bar pointer">
-                <a uk-icon="table" class="uk-icon-button"></a>
+                                </div>
+
+                                <div class="add-contact pointer">
+                                <a uk-icon="plus" class="uk-icon-button " uk-toggle href="#add-new-profile"></a>
+                                </div>
+
+                            </div>
+
+                            <div class="friend-list">
+                            
+                            </div>
+
             </div>
 
-            <div class="search-input">
+
+            <div class="settings tab-child" index="2">
                 
-                 <form class="uk-search uk-search-default">
-                     <input class="uk-search-input" type="search" placeholder="Search" aria-label="Search">
-                    <span class="uk-search-icon-flip" uk-search-icon></span>
-                 </form>
+                <h1 class=".uk-heading-small">Settings</h1>
+                
+                <div class="settings-parts full-width">
+                   
+                    <div class="setting-profile full-width">
+                        <button class="uk-button full-width">Update Your Profile</button>
+                    </div>
+                    
+                    <div class="setting-profile full-width">
+                        <button class="uk-button full-width">Contact List</button>
+                    </div>
+
+                
+
+                </div>
+
+                <div class="cancel-button-container">
+                    
+                    <button class="no-button close-settings-tab" icon="cancel">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>    
+
+                </div>
 
             </div>
-
-            <div class="add-contact pointer">
-            <a uk-icon="plus" class="uk-icon-button " uk-toggle href="#add-new-profile"></a>
-            </div>
-
-        </div>
-
-        <div class="friend-list">
         
         </div>
-
-    </div>
     
-    <div class="chat">
-        
-        <div class="contact-info">
+    
+        <div class="chat">
             
-            <div class="photo">
-                <img src="./img/userDefault.png" alt="">
-            </div>
+            <div class="contact-info">
 
-            <div class="text-info">
-                <span>Lol44lol</span>
-                <br>
-                <span>Last seen : 14:04 today</span>
-            </div>
-
-            <div class="action-info">
+               
                 
-                <ul class="uk-iconnav">
-                    <li><a href="#" uk-icon="icon:  receiver" class="selected-user-call-audio"></a></li>
-                    <li><a href="#" uk-icon="icon:  video-camera" class="selected-user-call"></a></li>
-                    <li><a href="#"><span uk-icon="icon:  more-vertical"></span> (2)</a></li>
+                <div class="photo">
+                    <img src="./img/userDefault.png" alt="">
+                </div>
+
+                <div class="text-info">
+                    <span>Lol44lol</span>
+                    <br>
+                    <span class="selected-user-current-state">Last seen : 14:04 today</span>
+                </div>
+
+                <div class="action-info">
+                    
+                    <ul class="uk-iconnav">
+                        <li><a href="#" uk-icon="icon:  receiver" class="selected-user-call-audio"></a></li>
+                        <li><a href="#" uk-icon="icon:  video-camera" class="selected-user-call"></a></li>
+                        <li><a href="#"><span uk-icon="icon:  more-vertical"></span> (2)</a></li>
+                    </ul>
+
+                </div>
+
+            </div>
+
+
+            <div class="chat-info">
+            </div>
+            
+            <div class="input-info">
+                
+                <div class="file-input">
+
+                    
+                <ul class="uk-iconnav file-actions">
+                    
+                    <li><a  class="uk-icon-button video-file-dialog-anchor">
+                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="black"><path d="M360-240h160q17 0 28.5-11.5T560-280v-40l80 42v-164l-80 42v-40q0-17-11.5-28.5T520-480H360q-17 0-28.5 11.5T320-440v160q0 17 11.5 28.5T360-240ZM240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-520v-200H240v640h480v-440H520ZM240-800v200-200 640-640Z"/></svg>
+                    </a></li>
+
+                    <li>
+                        <a href="#" class="uk-icon-button picture-file-dialog-anchor">
+                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="black"><path d="M480-480ZM200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h320v80H200v560h560v-320h80v320q0 33-23.5 56.5T760-120H200Zm40-160h480L570-480 450-320l-90-120-120 160Zm440-320v-80h-80v-80h80v-80h80v80h80v80h-80v80h-80Z"/></svg>
+                    </a></li>
+
+                    <li>
+                        <a href="#" class="uk-icon-button pdf-file-dialog-anchor">
+                            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="black"><path d="M360-460h40v-80h40q17 0 28.5-11.5T480-580v-40q0-17-11.5-28.5T440-660h-80v200Zm40-120v-40h40v40h-40Zm120 120h80q17 0 28.5-11.5T640-500v-120q0-17-11.5-28.5T600-660h-80v200Zm40-40v-120h40v120h-40Zm120 40h40v-80h40v-40h-40v-40h40v-40h-80v200ZM320-240q-33 0-56.5-23.5T240-320v-480q0-33 23.5-56.5T320-880h480q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H320Zm0-80h480v-480H320v480ZM160-80q-33 0-56.5-23.5T80-160v-560h80v560h560v80H160Zm160-720v480-480Z"/></svg>
+                        </a>
+                    </li>
+
+                    <li>
+                        <a href="#">
+                            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="black"><path d="M430-200q38 0 64-26t26-64v-150h120v-80H480v155q-11-8-23.5-11.5T430-380q-38 0-64 26t-26 64q0 38 26 64t64 26ZM240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-520v-200H240v640h480v-440H520ZM240-800v200-200 640-640Z"/></svg>
+                        </a>
+                    </li>
+
                 </ul>
 
+                </div>
+
+                <div class="uk-inline mobile-file-actions">
+                        <button type="button" class="uk-button" uk-icon="icon: more-vertical">
+                        </button>
+                        <div uk-dropdown="mode: click">
+                            <ul class="uk-iconnav uk-iconnav-vertical">
+                                   <li><a  class="uk-icon-button mobile-video-file-dialog-anchor">
+                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="black"><path d="M360-240h160q17 0 28.5-11.5T560-280v-40l80 42v-164l-80 42v-40q0-17-11.5-28.5T520-480H360q-17 0-28.5 11.5T320-440v160q0 17 11.5 28.5T360-240ZM240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-520v-200H240v640h480v-440H520ZM240-800v200-200 640-640Z"/></svg>
+                    </a></li>
+
+                    <li>
+                        <a href="#" class="uk-icon-button mobile-picture-file-dialog-anchor">
+                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="black"><path d="M480-480ZM200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h320v80H200v560h560v-320h80v320q0 33-23.5 56.5T760-120H200Zm40-160h480L570-480 450-320l-90-120-120 160Zm440-320v-80h-80v-80h80v-80h80v80h80v80h-80v80h-80Z"/></svg>
+                    </a></li>
+
+                    <li>
+                        <a href="#" class="uk-icon-button mobile-pdf-file-dialog-anchor">
+                            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="black"><path d="M360-460h40v-80h40q17 0 28.5-11.5T480-580v-40q0-17-11.5-28.5T440-660h-80v200Zm40-120v-40h40v40h-40Zm120 120h80q17 0 28.5-11.5T640-500v-120q0-17-11.5-28.5T600-660h-80v200Zm40-40v-120h40v120h-40Zm120 40h40v-80h40v-40h-40v-40h40v-40h-80v200ZM320-240q-33 0-56.5-23.5T240-320v-480q0-33 23.5-56.5T320-880h480q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H320Zm0-80h480v-480H320v480ZM160-80q-33 0-56.5-23.5T80-160v-560h80v560h560v80H160Zm160-720v480-480Z"/></svg>
+                        </a>
+                    </li>
+
+                    <li>
+                        <a href="#">
+                            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="black"><path d="M430-200q38 0 64-26t26-64v-150h120v-80H480v155q-11-8-23.5-11.5T430-380q-38 0-64 26t-26 64q0 38 26 64t64 26ZM240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-520v-200H240v640h480v-440H520ZM240-800v200-200 640-640Z"/></svg>
+                        </a>
+                    </li>
+                            </ul>
+                        </div>
+                </div>
+
+                <div class="text-input">
+                    <input type="text" class="send-message-input" placeholder="Send Something">
+                </div>
+
+                <div class="send-button">
+                    <a href="#" class="uk-icon-button send-message-action" scale=".1">
+                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="black"><path d="M120-160v-640l760 320-760 320Zm80-120 474-200-474-200v140l240 60-240 60v140Zm0 0v-400 400Z"/></svg>
+                    </a>
+                </div>
+
             </div>
 
-        </div>
+             <div class="go-back">
+                  <a href="#" uk-icon="icon: arrow-left;ratio: 2;" class="go-back-to-friend-button"></a></li>
+            </div>
 
 
-        <div class="chat-info">
         </div>
-        
-        <div class="input-info">
+    </div>
+
+   
+
+
+    <div id="add-new-profile" uk-modal>
+        <div class="uk-modal-dialog uk-modal-body">
             
-            <div class="file-input">
+            <form class="uk-form-stacked">
+
+                <div class="uk-margin">
+                    <label class="uk-form-label" for="form-stacked-text">Contact Name</label>
+                    <div class="uk-form-controls">
+                        <input class="uk-input add-new-profile-name" id="form-stacked-text" type="text" placeholder="John">
+                    </div>
+                </div>
 
                 
-            <ul class="uk-iconnav file-actions">
-                
-                <li><a  class="uk-icon-button video-file-dialog-anchor">
-                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="black"><path d="M360-240h160q17 0 28.5-11.5T560-280v-40l80 42v-164l-80 42v-40q0-17-11.5-28.5T520-480H360q-17 0-28.5 11.5T320-440v160q0 17 11.5 28.5T360-240ZM240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-520v-200H240v640h480v-440H520ZM240-800v200-200 640-640Z"/></svg>
-                </a></li>
-
-                <li>
-                    <a href="#" class="uk-icon-button picture-file-dialog-anchor">
-                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="black"><path d="M480-480ZM200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h320v80H200v560h560v-320h80v320q0 33-23.5 56.5T760-120H200Zm40-160h480L570-480 450-320l-90-120-120 160Zm440-320v-80h-80v-80h80v-80h80v80h80v80h-80v80h-80Z"/></svg>
-                </a></li>
-
-                <li>
-                    <a href="#" class="uk-icon-button pdf-file-dialog-anchor">
-                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="black"><path d="M360-460h40v-80h40q17 0 28.5-11.5T480-580v-40q0-17-11.5-28.5T440-660h-80v200Zm40-120v-40h40v40h-40Zm120 120h80q17 0 28.5-11.5T640-500v-120q0-17-11.5-28.5T600-660h-80v200Zm40-40v-120h40v120h-40Zm120 40h40v-80h40v-40h-40v-40h40v-40h-80v200ZM320-240q-33 0-56.5-23.5T240-320v-480q0-33 23.5-56.5T320-880h480q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H320Zm0-80h480v-480H320v480ZM160-80q-33 0-56.5-23.5T80-160v-560h80v560h560v80H160Zm160-720v480-480Z"/></svg>
-                    </a>
-                </li>
-
-                <li>
-                    <a href="#">
-                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="black"><path d="M430-200q38 0 64-26t26-64v-150h120v-80H480v155q-11-8-23.5-11.5T430-380q-38 0-64 26t-26 64q0 38 26 64t64 26ZM240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-520v-200H240v640h480v-440H520ZM240-800v200-200 640-640Z"/></svg>
-                    </a>
-                </li>
-
-            </ul>
-
-            </div>
-
-            <div class="text-input">
-                <input type="text" class="send-message-input" placeholder="Send Something">
-            </div>
-
-            <div class="send-button">
-                <a href="#" class="uk-icon-button send-message-action" scale=".1">
-                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="black"><path d="M120-160v-640l760 320-760 320Zm80-120 474-200-474-200v140l240 60-240 60v140Zm0 0v-400 400Z"/></svg>
-                </a>
-            </div>
-
-        </div>
-
-
-    </div>
-
-
-<div id="add-new-profile" uk-modal>
-    <div class="uk-modal-dialog uk-modal-body">
-        
-        <form class="uk-form-stacked">
-
-            <div class="uk-margin">
-                <label class="uk-form-label" for="form-stacked-text">Contact Name</label>
-                <div class="uk-form-controls">
-                    <input class="uk-input add-new-profile-name" id="form-stacked-text" type="text" placeholder="John">
+                <div class="uk-margin">
+                    <label class="uk-form-label" for="form-stacked-text">Contact Phone Number</label>
+                    <div class="uk-form-controls">
+                        <input class="uk-input add-new-profile-contact" id="form-stacked-text" type="text" placeholder="+9483920932">
+                    </div>
                 </div>
-            </div>
 
+            </form>
             
-            <div class="uk-margin">
-                <label class="uk-form-label" for="form-stacked-text">Contact Phone Number</label>
-                <div class="uk-form-controls">
-                    <input class="uk-input add-new-profile-contact" id="form-stacked-text" type="text" placeholder="+9483920932">
-                </div>
+            <div class="add-new-profile-actions">
+                <button class="uk-modal-close uk-button uk-button-danger" type="button">Exit</button>
+                <button class="uk-modal-close uk-button uk-button-primary save-new-profile-button" type="button">Save</button>
             </div>
-
-        </form>
         
-        <div class="add-new-profile-actions">
-             <button class="uk-modal-close uk-button uk-button-danger" type="button">Exit</button>
-             <button class="uk-modal-close uk-button uk-button-primary save-new-profile-button" type="button">Save</button>
         </div>
-      
     </div>
-</div>
 
 
-<div id="share-a-file" class="share-file-dialog" uk-modal>
-       
+    <div id="share-a-file" class="share-file-dialog" uk-modal>
+        
 
 
+        </div>
     </div>
-</div>
 
 
 
@@ -183,92 +255,99 @@
   </dialog>
 
 
-<dialog class="call-dialog" >
+    <dialog class="call-dialog" >
 
-    <div class="call-outgoing tab-child" index="1">
+        <div class="call-outgoing tab-child" index="1">
 
-        <div class="call-profile-pic">
-            <img src="./img/userDefault.png" alt="">
+            <div class="call-profile-pic">
+                <img src="./img/userDefault.png" alt="">
+            </div>
+
+            <div class="call-detail-info">
+                <h4 class="call-receiver-name">Username</h4>
+                <h5 class="call-receiver-contact">Phone Number</h5>
+                <h5 class="call-receiver-state">State</h5>
+            </div>
+
+            <div class="call-actions call-outgoing-actions">
+                <button class="uk-button uk-button-danger call-cancel-before-answer">Cancel Call</button>
+            </div>
+
+
         </div>
 
-        <div class="call-detail-info">
-            <h4 class="call-receiver-name">Username</h4>
-            <h5 class="call-receiver-contact">Phone Number</h5>
-            <h5 class="call-receiver-state">State</h5>
-        </div>
+        <div class="call-incoming tab-child" index="2">
 
-        <div class="call-actions call-outgoing-actions">
-            <button class="uk-button uk-button-danger call-cancel-before-answer">Cancel Call</button>
-        </div>
-
-
-    </div>
-
-    <div class="call-incoming tab-child" index="2">
-
-        <div class="call-profile-pic" >
-            <img src="./img/userDefault.png" alt="">
-        </div>
-    
-        <div class="call-detail-info call-caller-details">
-            <h4 class="call-incoming-name">Username</h4>
-            <h5 class="call-incoming-phone">Phone Number</h5>
-        </div>
-
-        <div class="call-actions  call-receiver-actions">
-            <button class="uk-button uk-button-danger">Reject</button>
-            <button class="uk-button uk-button-primary call-receiver-accept-button">Accept</button>
-        </div>
-
-    </div>
-
-
-    <div class="call-in tab-child" index="3">
-
-        <div class="call-detail-info">
-            <video autoplay class="call-other-user-video"></video>
-        </div>
-
-        <div class="call-actions">
-            <button class="uk-button uk-button-danger end-call-button">End Call</button>
-        </div>
-
-
-    </div>
-
-    <div class="call-in-audio-only tab-child" index="5">
+            <div class="call-profile-pic" >
+                <img src="./img/userDefault.png" alt="">
+            </div>
         
-        <div class="call-profile-pic" >
-                    <img src="./img/userDefault.png" alt="">
+            <div class="call-detail-info call-caller-details">
+                <h4 class="call-incoming-name">Username</h4>
+                <h5 class="call-incoming-phone">Phone Number</h5>
+            </div>
+
+            <div class="call-actions  call-receiver-actions">
+                <button class="uk-button uk-button-danger">Reject</button>
+                <button class="uk-button uk-button-primary call-receiver-accept-button">Accept</button>
+            </div>
+
         </div>
 
-        <div class="call-detail-info">
-            <h4 class="call-audio-receiver-name">Username</h4>
-            <h5 class="call-audio-receiver-contact">Phone Number</h5>
-            <h5 class="call-audio-receiver-state">Connected</h5>
-            <audio autoplay class="call-only-audio-audio"></audio>
+
+        <div class="call-in tab-child" index="3">
+
+            <div class="call-detail-info">
+                <video autoplay class="call-other-user-video"></video>
+            </div>
+
+            <div class="call-actions">
+                <button class="uk-button uk-button-danger end-call-button">End Call</button>
+            </div>
+
+
         </div>
 
-        <div class="call-actions">
-            <button class="uk-button uk-button-danger end-only-audio-call-button">End Call</button>
-        </div>
-    </div>
+        <div class="call-in-audio-only tab-child" index="5">
+            
+            <div class="call-profile-pic" >
+                        <img src="./img/userDefault.png" alt="">
+            </div>
 
-    <div class="call-end tab-child" index="4">
+            <div class="call-detail-info">
+                <h4 class="call-audio-receiver-name">Username</h4>
+                <h5 class="call-audio-receiver-contact">Phone Number</h5>
+                <h5 class="call-audio-receiver-state">Connected</h5>
+                <audio autoplay class="call-only-audio-audio"></audio>
+            </div>
+
+            <div class="call-actions">
+                <button class="uk-button uk-button-danger end-only-audio-call-button">End Call</button>
+            </div>
+        </div>
+
+        <div class="call-end tab-child" index="4">
+            
+            <div class="call-end-user-details">
+                <h4 class="call-ended-by-user">Call Was disconnected by other user</h4>
+            </div>
+
+            <div class="call-end-actions">
+                <button class="uk-button uk-button-danger call-disconnected-close">Close</button>
+            </div>
+
+        </div>
+
+
         
-        <div class="call-end-user-details">
-            <h4 class="call-ended-by-user">Call Was disconnected by other user</h4>
-        </div>
+    </dialog> 
 
-        <div class="call-end-actions">
-            <button class="uk-button uk-button-danger call-disconnected-close">Close</button>
-        </div>
 
+    <div id="my-id" uk-offcanvas>
+        <div class="uk-offcanvas-bar">
+            <button class="uk-offcanvas-close" type="button" uk-close></button>
+        </div>
     </div>
-
-
-    
-  </dialog> 
 
 
 

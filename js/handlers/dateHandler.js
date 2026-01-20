@@ -26,6 +26,26 @@ export class DateHandler {
         return today + DAY_TO_MILLE_SECONDS;
     }
 
+    addZeroIf(num){
+        if(num < 10){
+            return "0" + num 
+        }
+        return num
+    }
+
+    convertToLastSeenAt(date){
+        const today = this.getToday()
+        const formattedDate = (new Date(date))
+        const time = formattedDate.getTime()
+        const yesterday = this.getYesterday(today)
+        if( today <= time){
+            return this.addZeroIf(formattedDate.getHours()) + ":" + this.addZeroIf(formattedDate.getMinutes()) +" Today"
+        }else if(yesterday <= time <today){
+            return this.addZeroIf(formattedDate.getHours()) + ":" + this.addZeroIf(formattedDate.getMinutes()) +" Yesterday"
+        }else{
+            return "Offline"
+        }
+    }
 
     getToday(){
         const time = Date.now()
@@ -36,7 +56,6 @@ export class DateHandler {
         const seconds = dateInfo.getSeconds()
 
         const today = time - (  (hours * HOUR_TO_MILLE_SECONDS) + (minutes * MINUTE_TO_MILLIE_SECONDS)  + (seconds * SECOND_TO_MILLIE_SECONDS) ) 
-        const todayInfo = new Date(today)
        return  today;
     }
 

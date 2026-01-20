@@ -41,6 +41,10 @@ const PICTURE_UPLOAD_ACTIONS_CLS_NAME = ".picture-file-dialog-anchor"
 const PDF_UPLOAD_ACTIONS_CLS_NAME = ".pdf-file-dialog-anchor"
 const FILE_UPLOAD_ACTIONS_CLS_NAME = ""
 
+const MENU_PICTURE_UPLOAD_ACTIONS_CLS_NAME = ".mobile-picture-file-dialog-anchor"
+const MENU_PDF_UPLOAD_ACTIONS_CLS_NAME = ".mobile-pdf-file-dialog-anchor"
+const MENU_VIDEO_UPLOAD_ACTIONS_CLS_NAME = ".mobile-video-file-dialog-anchor"
+
 const FILE_INPUT_MODAL_TAG = "file-input-modal"
 
 
@@ -52,6 +56,13 @@ const CALL_ACCEPT_BY_RECEIVER_BUTTON_CLS_NAME = ".call-receiver-accept-button"
 const CALL_CLOSE_BUTTON_BY_USER_CLS_NAME = ".end-call-button"
 const CALL_AUDIO_ONLY_FINISH_CLS_NAME = ".call-disconnected-close"
 const CALL_ONLY_AUDIO_DISCONNECTED_BUTTON_CLS_NAME = ".end-only-audio-call-button"
+
+
+// Left Side of the app
+const SETTING_OPEN_BUTTON_CLS_NAME = ".open-setting-button"
+const SETTING_CLOSE_BUTTON_CLS_NAME = ".close-settings-tab"
+
+
 
 export class UIClickHandler extends ClickHandler {
 
@@ -76,6 +87,10 @@ export class UIClickHandler extends ClickHandler {
         this.callCloseButtonClick = this.callCloseButtonClick.bind(this)
         this.callCloseDialogAtEndOfTheCall = this.callCloseDialogAtEndOfTheCall.bind(this)
         this.callCancelAudioOnlyClicked  = this.callCancelAudioOnlyClicked.bind(this)
+
+        // Settings
+        this.closeSettingsTab = this.closeSettingsTab.bind(this)
+        this.openSettingsTab = this.openSettingsTab.bind(this)
     }
 
     /**
@@ -109,11 +124,15 @@ export class UIClickHandler extends ClickHandler {
         this.setOnClick(query(MODAL_CLOSE_ACTION_CLS_NAME), this.onClosingFileUploadClick)
 
         // File Upload Actions
-        // this.setOnClick(query(ALL_FILES_UPLOAD_CLS_NAME),this.onUploadAllFileClicked)
+        this.setOnClick(query(ALL_FILES_UPLOAD_CLS_NAME),this.onUploadAllFileClicked)
         
         this.setOnClick(query(VIDEO_UPLOAD_ACTIONS_CLS_NAME),this.onVideoUploadDialogClick)
         this.setOnClick(query(PICTURE_UPLOAD_ACTIONS_CLS_NAME),this.onPictureUploadDialogClicked)
         this.setOnClick(query(PDF_UPLOAD_ACTIONS_CLS_NAME),this.onPDFFileUploadDialogClick)
+        this.setOnClick(query(MENU_VIDEO_UPLOAD_ACTIONS_CLS_NAME),this.onVideoUploadDialogClick)
+        this.setOnClick(query(MENU_PICTURE_UPLOAD_ACTIONS_CLS_NAME),this.onPictureUploadDialogClicked)
+        this.setOnClick(query(MENU_PDF_UPLOAD_ACTIONS_CLS_NAME),this.onPDFFileUploadDialogClick)
+        
         
         // this.setOnClick(query(AUDIO_UPLOAD_ACTIONS_CLS_NAME),t)
         this.setOnClick(query(CALL_VIDEO_CALL_START_BUTTON_CLS_NAME),this.onVideoCallButtonClick)
@@ -123,6 +142,11 @@ export class UIClickHandler extends ClickHandler {
         this.setOnClick(query(CALL_CLOSE_BUTTON_BY_USER_CLS_NAME),this.callCloseButtonClick)
         this.setOnClick(query(CALL_AUDIO_ONLY_FINISH_CLS_NAME),this.callCloseDialogAtEndOfTheCall)
         this.setOnClick(query(CALL_ONLY_AUDIO_DISCONNECTED_BUTTON_CLS_NAME),this.callCancelAudioOnlyClicked)
+
+
+        // Settings
+        this.setOnClick(query(SETTING_CLOSE_BUTTON_CLS_NAME),this.closeSettingsTab)
+        this.setOnClick(query(SETTING_OPEN_BUTTON_CLS_NAME),this.openSettingsTab)
     }
     
     onFileMenuClick(){
@@ -156,6 +180,7 @@ export class UIClickHandler extends ClickHandler {
 
 
     async onUploadAllFileClicked(event){
+        console.log("Uploading")
         const files = this.fileHandler.yetToUploadFiles
         for(let i = 0 ; i < files.length;i++){
             const file = files[i]
@@ -238,4 +263,17 @@ export class UIClickHandler extends ClickHandler {
     }
     
 
+
+
+
+    // Left side of the app
+
+    // left side of the app Settings
+    closeSettingsTab(){
+        this.visualHandler.setLeftSideAppTab('1')
+    }
+
+    openSettingsTab(){
+        this.visualHandler.setLeftSideAppTab('2')
+    }
 }

@@ -16,5 +16,8 @@
     "url": "https://github.com/Sunath20/weChat-fronted/issues"
   },
   "homepage": "https://github.com/Sunath20/weChat-fronted#readme",
-  "description": ""
+  "description": "",
+  "devDependencies": {
+    "parcel": "^2.16.3"
+  }
 }

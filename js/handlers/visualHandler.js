@@ -19,6 +19,9 @@ const UPLOAD_PREVIEW_CONTAINER =".uploading-preview"
 const FRIEND_LIST_CLS_NAME = ".friend-list"
 
 
+// SELECTED FRIEND
+const SELECTED_FRIEND_CURRENT_STATE_CLS_NAME = ".selected-user-current-state"
+
 
 
 
@@ -40,6 +43,7 @@ const MODAL_TAG_CALL_DIALOG = "call-dialog"
 
 // Tab TAGS
 const TAB_CALL_TAG = "call-tag"
+const TAB_LEFT_SIDE_APP_TAG = "left-side-app"
 
 /**
  * Responsible for maintain render elements,delete and update elements
@@ -72,6 +76,7 @@ export class VisualHandler {
         // Set the tabs
         // Setting the tabs
         this.tabHandler.registerTab(TAB_CALL_TAG, query(".call-dialog"))
+        this.tabHandler.registerTab(TAB_LEFT_SIDE_APP_TAG,query(".left-side-of-app"))
 
 
         
@@ -299,6 +304,12 @@ export class VisualHandler {
         const container = document.querySelector(SELECTED_PERSON_INFO_CLS)  
         const nameSpan = container.querySelector(".text-info > span")
         nameSpan.innerText = friendDetails['name']
+    }
+
+
+    setCurrentFriendStatus(status){
+        const stateSpan = query(SELECTED_FRIEND_CURRENT_STATE_CLS_NAME)
+        stateSpan.innerText = status
     }
 
     /**
@@ -529,7 +540,9 @@ export class VisualHandler {
      */
     readMessage(messageID){
         const element = query(`.message[messageid="${messageID}"]`)
-        element.setAttribute('read','true')
+        if(element){
+            element.setAttribute('read','true')
+        }
     }
 
      /**
@@ -695,6 +708,11 @@ export class VisualHandler {
         query(CALL_END_USERNAME_TEXT_CLS).innerText = `Call ended by ${endedBy}`
     }
 
+
+    setLeftSideAppTab(index){
+        this.tabHandler.showTab(TAB_LEFT_SIDE_APP_TAG,index)
+    }
+
 }
 
 
@@ -702,6 +720,9 @@ class ModalHandler {
     
     constructor(){  
          this.modals = {}
+         this.registerModal = this.registerModal.bind(this)
+         this.showModal = this.showModal.bind(this)
+         this.hideModal = this.hideModal.bind(this)
       }
 
 
@@ -710,6 +731,7 @@ class ModalHandler {
     }
 
     showModal(name){
+        console.log(this.modals)
         this.modals[name].showModal()
     }
 
@@ -721,6 +743,9 @@ class ModalHandler {
     hideModal(name){
         this.modals[name].close()
     }
+
+
+
 
 
    

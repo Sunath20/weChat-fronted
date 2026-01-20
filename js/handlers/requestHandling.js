@@ -1,32 +1,36 @@
 import { ChatHandler } from "./chatHandler.js"
-import { getCurrentActiveContact, matchActiveAndReceivedMessageContact, println, readData } from "../utils.js"
+import { getCurrentActiveContact, getSelectedUsersID, matchActiveAndReceivedMessageContact, println, readData } from "../utils.js"
 import { DatabaseMessageModel, DataHandlerMessageModel } from "../models.js"
 import { DataHandler } from "./dataHandler.js"
 import { VisualHandler } from "./visualHandler.js"
 import { MessageDeliveredPayload } from "../serverPayloads.js"
 import { SendMessageDeliveredPayload } from "../clientPayloads.js"
+import { DateHandler } from "./dateHandler.js"
 
 export const MESSAGE_TYPES = {
-    'SEND':0,
-    'CREATE_ROOM':1,
-    'ROOM_CREATED':2,
-    'ROOM_CREATED_FAILED':3,
-    'MESSAGE_RECEIVED':4,
-    'SET_MESSAGE_DELIVERED':5,
-    'MESSAGE_DELIVERED':6,
-    'GET_BACK_CREATED_MESSAGE':7,
-    'SET_LIST_OF_MESSAGE_DELIVERED':8,
-    'RECEIVE_LIST_OF_MESSAGE_DELIVERED':9,
-    'SET_SEEN_MESSAGE':10,
-    'RECEIVE_SEEN_MESSAGE':11,
-    'FILE_MESSAGE_SEND_TO_OTHER_USER':12,
-    'FILE_MESSAGE_RECEIVE_TO_OTHER_USER':13,
+    'SEND':1,
+    'CREATE_ROOM':2,
+    'ROOM_CREATED':3,
+    'ROOM_CREATED_FAILED':4,
+    'MESSAGE_RECEIVED':5,
+    'SET_MESSAGE_DELIVERED':6,
+    'MESSAGE_DELIVERED':7,
+    'GET_BACK_CREATED_MESSAGE':8,
+    'SET_LIST_OF_MESSAGE_DELIVERED':9,
+    'RECEIVE_LIST_OF_MESSAGE_DELIVERED':10,
+    'SET_SEEN_MESSAGE':11,
+    'RECEIVE_SEEN_MESSAGE':12,
+    'FILE_MESSAGE_SEND_TO_OTHER_USER':13,
+    'FILE_MESSAGE_RECEIVE_TO_OTHER_USER':14,
 }
 
 
 export const USER_HANDLES = {
-    'NEW_CONNECTION':0,
-    'REMOVE_CONNECTION': 1,
+    'NEW_CONNECTION':1,
+    'REMOVE_CONNECTION': 2,
+    'IS_FRIEND_IS_ONLINE':3,
+    'RECEIVE_FRIEND_IS_ONLINE':4,
+    'SHARE_MY_ONLINE_STATE':5
 }
 
 
@@ -52,10 +56,10 @@ export const CALL_TYPES = {
 }
 
 export const MAIN_HANDLERS = {
-    'USER_CONFIG':0,
-    'FILE_SHARE':1,
-    'MESSAGE':2,
-    'CALL':3
+    'USER_CONFIG':1,
+    'FILE_SHARE':2,
+    'MESSAGE':3,
+    'CALL':4
 }
 
 
@@ -415,6 +419,98 @@ export class MessageHandler {
 
 
     
+
+}
+
+
+/**
+ * Handles user online , offline events with web socket and typing or in a call
+ * Things like that
+ */
+export class UserConfigHandler {
+
+    constructor(){
+        this.handlers = {
+            [USER_HANDLES.RECEIVE_FRIEND_IS_ONLINE]:this.receiveIfFriendIsOnline.bind(this)
+        }
+    }
+
+    /**
+     * Set the websocket handler
+     * @param {WebSocketHandler} handler 
+     */
+    setWebSocketHandler(handler){
+        this.webSocketHandler = handler;
+    }
+
+
+    /**
+     * Set the visual handler
+     * @param {VisualHandler} handler 
+     */
+    setVisualHandler(handler){
+        this.visualHandler = handler;
+    }
+
+
+    /**
+     * Set the data handler
+     * @param {DataHandler} handler 
+     */
+    setDataHandler(handler){
+        this.dataHandler = handler;
+    }
+
+
+    /**
+     * Set the date handler
+     * @param {DateHandler} handler 
+     */
+    setDateHandler(handler){
+        this.dateHandler = handler;
+    }
+
+    handle(payload){
+        console.log("Receive payload ",payload)
+        const handlerOne = payload['handlerOne']
+        if(handlerOne && this.handlers[handlerOne]){
+            this.handlers[handlerOne](payload)
+        }
+    }
+
+    askIfFriendOnline(contact){
+        const payload = {
+            mainHandler:MAIN_HANDLERS.USER_CONFIG,
+            handlerOne:USER_HANDLES.IS_FRIEND_IS_ONLINE,
+            contact
+        }
+
+        this.webSocketHandler.sendData(JSON.stringify(payload))
+    }
+
+    receiveIfFriendIsOnline(payload){
+        const {online,contact,lastOnlineAt} = payload;
+        const {to} = getSelectedUsersID()
+        this.dataHandler.setLastSeenAt(contact,lastOnlineAt)
+        if(online && to===contact){
+            this.visualHandler.setCurrentFriendStatus("Online")
+        }else{
+            console.log(payload)
+            this.visualHandler.setCurrentFriendStatus(lastOnlineAt ? this.dateHandler.convertToLastSeenAt(lastOnlineAt) : "Offline")
+        }
+    }
+
+
+    sendMyOnlineStatus(to,online=true){
+        const payload = {
+            mainHandler:MAIN_HANDLERS.USER_CONFIG,
+            handlerOne:USER_HANDLES.SHARE_MY_ONLINE_STATE,
+            to,
+            online
+        }
+        this.webSocketHandler.sendData(JSON.stringify(payload))
+    }
+
 
 }
 

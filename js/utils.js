@@ -204,3 +204,6 @@ export function fileTypeToCategory(fileType){
 
     return FILE_CATEGORY_TYPES.OTHER
 }
+
+
+

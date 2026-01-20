@@ -8,7 +8,7 @@
     cursor: pointer;
 }
 
-body{
+.main-container{
     width: 100%;
     display: flex;
     height: 100%;
@@ -18,12 +18,17 @@ body{
 
 /* FRIENDS STYLES */
 
-.friends{
+.left-side-of-app{
     width: 30%;
+    height: 100%;
+}
+
+.friends{
+    width: 100%;
     /* background-color: black; */
     display: flex;
     flex-direction: column;
-    
+    height: 100%;
 }
 
 .search-bar{
@@ -185,6 +190,7 @@ body{
     background-color: #f1f1f1;
     display: flex;
     justify-content: space-evenly;
+    align-items: center;
 }
 
 
@@ -375,4 +381,139 @@ body{
 
 .upload-file-instance > video {
     max-height: 500px;
+}
+
+
+/* Settings */
+.settings {
+    position: relative;
+}
+.settings > .cancel-button-container{
+    position: absolute;
+    top: 0;
+    right: 0;
+    margin-right: 20px;
+    margin-top: 20px;
+}
+
+.settings-parts{
+    margin-top: auto;
+    margin-bottom: auto;
+    height: 50vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    align-items: space-evenly;
+}
+
+
+/* Hide mobile Elements */
+.mobile-file-actions{
+    display: none !important;
+}
+
+.go-back{
+    display: none;
+}
+
+
+
+
+
+
+
+
+/* Adding Mobile Supports */
+
+@media (max-width: 768px) {
+    .main-container {
+        display: block;
+    }
+
+    .left-side-of-app{
+        width: 100%;
+    }
+
+    .main-container[showMessages="true"] > .left-side-of-app {
+        display: none;
+    }
+
+    .main-container > .chat > .go-back {
+        display: none;
+    }
+
+    .main-container[showMessages="true"] > .chat > .go-back {
+        display: block;
+    }
+
+    .chat{
+        width: 100%;
+        height: 100vh;
+    }
+
+    .friends {
+        width: 100%;
+        height: 100vh;
+    }
+
+    .chat >  .go-back {
+        position: absolute;
+        top: 10%;
+        left: 0;
+    }
+
+    .chat > .input-info {
+        position: absolute;
+        bottom: 0;
+        height: fit-content;
+        justify-content: space-between;
+    }
+
+    .main-container > .chat > .input-info {
+        display: none;
+    }
+
+    .main-container[showMessages="true"] > .chat > .input-info{
+        display: flex;
+    }
+
+    .chat > .input-info > .file-input {
+        display: none;
+    }
+
+    .text-input{
+        width: 70% !important;
+    }
+
+    .chat-info{
+        margin-bottom: 10px;
+        padding-bottom: 30px;
+    }
+
+
+    .mobile-file-actions{
+        display: inline-block !important;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+/* Common Attributes */
+.no-button{
+    background-color: transparent;
+    outline: none;
+    border: none;
+    cursor: pointer;
+}
+
+.full-width {
+    width: 100%;
 }

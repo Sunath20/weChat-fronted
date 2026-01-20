@@ -100,3 +100,20 @@ body{
     overflow: hidden !important;
     /* height: 40px; */
 }
+
+
+
+@media (max-width: 768px) {
+    .sign-up{
+        overflow-x: hidden;
+        max-width: 100%;
+        width: 100%;
+    }
+
+    .field{
+        max-width: 90%;
+        margin-left: auto;
+        margin-right: auto;
+
+    }
+}

@@ -8,7 +8,7 @@ import { DateHandler } from "./handlers/dateHandler.js"
 import { FileHandler, WebFileHandler } from "./handlers/fileHandler.js"
 import {KeyBoardHandler} from "./handlers/keyboardHandler.js"
 import { Notification, setNotificationsToZero } from "./handlers/notification.js"
-import {WebSocketHandler,MessageHandler, MAIN_HANDLERS,APIHandler} from "./handlers/requestHandling.js"
+import {WebSocketHandler,MessageHandler, MAIN_HANDLERS,APIHandler, UserConfigHandler} from "./handlers/requestHandling.js"
 import {VisualHandler} from "./handlers/visualHandler.js"
 import { DatabaseMessageModel, DataHandlerMessageModel } from "./models.js"
 
@@ -23,6 +23,8 @@ if(!from){
 
 const webSocket = new WebSocketHandler()
 const messageHandler = new MessageHandler()
+const userConfigHandler = new UserConfigHandler()
+
 const apiHandler = new APIHandler()
 const chatHandler = new ChatHandler(apiHandler)
 const notification = new Notification()
@@ -74,6 +76,12 @@ callHandler.setVisualHandler(visualHandler)
 callHandler.setDataHandler(dataHandler)
 
 
+userConfigHandler.setWebSocketHandler(webSocket)
+userConfigHandler.setVisualHandler(visualHandler)
+userConfigHandler.setDataHandler(dataHandler)
+userConfigHandler.setDateHandler(dateHandler)
+
+
 
 // Passing arguments
 const CHAT_SEND_TEXT_INPUT_CLS_NAME = ".text-input"
@@ -88,7 +96,7 @@ visualHandler.contacts = contacts;
 
 webSocket.setMainHandler(MAIN_HANDLERS.MESSAGE,messageHandler)
 webSocket.setMainHandler(MAIN_HANDLERS.CALL,callHandler)
-
+webSocket.setMainHandler(MAIN_HANDLERS.USER_CONFIG,userConfigHandler)
 
 // SAVE NEW PROFILE
 const saveNewProfileAction = query(".save-new-profile-button")
@@ -213,6 +221,9 @@ function selectClickedFriend(friendDetails){
         })}
         
         chatHandler.currentMessageContacts[friendDetails.contact] = {}
+        query(".main-container").setAttribute("showMessages","true")
+        userConfigHandler.askIfFriendOnline(friendDetails['contact'])
+        userConfigHandler.sendMyOnlineStatus(friendDetails['contact'])
     }
 }
 
@@ -307,20 +318,6 @@ document.querySelector(".chat-info").addEventListener('scroll',async (event) => 
 })
 
 
-// Set File Sending
-const inputFilesElement = document.getElementById("FILES-SHARE_INPUT")
-inputFilesElement.addEventListener('change',async (event) => {
-    const files = event.target.files
-    if(files.length > 0){
-        visualHandler.uploadFilePreviews(files)
-        
-        
-
-    }
-
-    event.target.files = null;
-    event.target.value = null;
-})
 
 
 
@@ -388,3 +385,33 @@ fileInputZone.addEventListener('drop',(event) => {
     visualHandler.uploadFilePreviews(files)
     fileHandler.setYetToUploadFiles(files)
 })
+
+
+
+// Set File Sending
+const inputFilesElement = document.getElementById("FILES-SHARE_INPUT")
+inputFilesElement.addEventListener('change',async (event) => {
+    const files = event.target.files
+    if(files.length > 0){
+        fileInputZone.style.display = "none"
+        visualHandler.uploadFilePreviews(files)
+        fileHandler.setYetToUploadFiles(files)
+    }
+
+
+})
+
+
+visualHandler.setLeftSideAppTab("2")
+
+query(".go-back-to-friend-button").addEventListener('click',(event) => {
+    query(".main-container").setAttribute('showMessages','false')
+})
+
+
+
+// Actions that repeats in a cycle
+setInterval(() => {
+    const {to} = getSelectedUsersID()
+    userConfigHandler.askIfFriendOnline(to)
+},10000)

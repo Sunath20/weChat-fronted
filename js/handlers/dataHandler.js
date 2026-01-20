@@ -16,6 +16,7 @@ export class DataHandler {
         
         this.messages = readData('messages') || {}
         this.contacts = readData('contacts') || [];
+        this.lastOnlineAt = readData('lastOnlineAt') || {}
         this.notifications = {}
         
         this.calculateLastMessageTimesIf = this.calculateLastMessageTimesIf.bind(this)
@@ -161,6 +162,12 @@ export class DataHandler {
         })
 
         return msgOBJ;
+    }
+
+
+    setLastSeenAt(user,date){
+        this.lastOnlineAt[user] = date;
+        saveData('lastOnlineAt',this.lastOnlineAt)
     }
 
 
