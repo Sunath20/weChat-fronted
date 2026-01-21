@@ -6,61 +6,10 @@ import { VisualHandler } from "./visualHandler.js"
 import { MessageDeliveredPayload } from "../serverPayloads.js"
 import { SendMessageDeliveredPayload } from "../clientPayloads.js"
 import { DateHandler } from "./dateHandler.js"
-
-export const MESSAGE_TYPES = {
-    'SEND':1,
-    'CREATE_ROOM':2,
-    'ROOM_CREATED':3,
-    'ROOM_CREATED_FAILED':4,
-    'MESSAGE_RECEIVED':5,
-    'SET_MESSAGE_DELIVERED':6,
-    'MESSAGE_DELIVERED':7,
-    'GET_BACK_CREATED_MESSAGE':8,
-    'SET_LIST_OF_MESSAGE_DELIVERED':9,
-    'RECEIVE_LIST_OF_MESSAGE_DELIVERED':10,
-    'SET_SEEN_MESSAGE':11,
-    'RECEIVE_SEEN_MESSAGE':12,
-    'FILE_MESSAGE_SEND_TO_OTHER_USER':13,
-    'FILE_MESSAGE_RECEIVE_TO_OTHER_USER':14,
-}
+import { eventBus } from "../core/EventBus.js"
+import { MAIN_HANDLERS, MESSAGE_TYPES,CALL_TYPES,FILE_TYPES,USER_HANDLES } from "../core/Actions.js"
 
 
-export const USER_HANDLES = {
-    'NEW_CONNECTION':1,
-    'REMOVE_CONNECTION': 2,
-    'IS_FRIEND_IS_ONLINE':3,
-    'RECEIVE_FRIEND_IS_ONLINE':4,
-    'SHARE_MY_ONLINE_STATE':5
-}
-
-
-
-export const FILE_TYPES = {
-    'FILE_CREATE':0,
-    'FILE_CHUCK_TO_SERVER':1,
-    'FILE_CHUCK_TO_CLIENT':2,
-    'FILE_CHUCK_FINISHED':3,
-    'FILE_CREATED':4
-}
-
-
-export const CALL_TYPES = {
-    'CALL_OFFER_CREATED':1,
-    'CALL_OFFER_RECEIVED':2,
-    'CALL_ANSWER_CREATED':3,
-    'CALL_ANSWER_RECEIVED':4,
-    'CALL_ICE_NEW_CANDIDATE_CREATED':5,
-    'CALL_ICE_NEW_CANDIDATE_RECEIVED':6,
-    'CALL_WAS_DISCONNECTED_BY_USER':7,
-    'CALL_WAS_DISCONNECTED_BY_USER_RECEIVED':8
-}
-
-export const MAIN_HANDLERS = {
-    'USER_CONFIG':1,
-    'FILE_SHARE':2,
-    'MESSAGE':3,
-    'CALL':4
-}
 
 
 function jsonFetch(url,metaData){
@@ -171,10 +120,15 @@ export class WebSocketHandler {
         }
 
         const data = JSON.parse(event.data)
-        if(data['mainHandler']){
-            const handler = this.handlers[data['mainHandler']]
-            handler.handle(data)
+        const handlerOne = data['handlerOne']
+
+        if(handlerOne){
+            eventBus.emit(handlerOne,data)
         }
+        // if(data['mainHandler']){
+        //     const handler = this.handlers[data['mainHandler']]
+        //     handler.handle(data)
+        // }
     }
 
     /**
@@ -230,6 +184,17 @@ export class WebSocketHandler {
         }
 
         this.sendData(JSON.stringify(payload))
+    }
+
+    sendDeliveredMessage(friend,messageID){
+         const inputPayload = new SendMessageDeliveredPayload()
+         inputPayload.mainHandler = MAIN_HANDLERS.MESSAGE
+         inputPayload.handlerOne = MESSAGE_TYPES.SET_MESSAGE_DELIVERED
+         const time = (new Date()).toUTCString()
+         inputPayload.time = time
+         inputPayload.to = friend
+         inputPayload.messageID = messageID
+         this.sendData(JSON.stringify(inputPayload))
     }
 }
 
@@ -730,3 +695,13 @@ export class APIHandler {
 
 
 }
+
+
+
+
+export const webSocketHandler = new WebSocketHandler()
+
+eventBus.on(MESSAGE_TYPES.MESSAGE_RECEIVED,(payload) => {
+    const message = new DatabaseMessageModel(payload)
+    webSocketHandler.sendSetDeliveredMessages([message.messageID])
+})

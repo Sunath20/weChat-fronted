@@ -1,5 +1,6 @@
 import { DatabaseMessageModel, DataHandlerMessageModel, FormattedDataHandlerMessageModel } from "../models.js"
 import { isEmptyObject, println, readData, saveData } from "../utils.js"
+import { tagBaseOnDate } from "../utils/dateUtils.js";
 import { DateHandler } from "./dateHandler.js"
 import { APIHandler, WebSocketHandler } from "./requestHandling.js";
 import { VisualHandler } from "./visualHandler.js";
@@ -142,7 +143,7 @@ export class DataHandler {
      * @returns {FormattedDataHandlerMessageModel[]}
      */
     reformatMessages(messages){
-        return this.dateHandler.tagBaseOnDate(messages)
+        return tagBaseOnDate(messages)
     }
 
     /**

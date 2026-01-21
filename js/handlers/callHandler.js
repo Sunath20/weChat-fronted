@@ -1,7 +1,9 @@
 import { getSelectedUsersID, query, readData } from "../utils.js";
 import { DataHandler } from "./dataHandler.js";
-import { CALL_TYPES, MAIN_HANDLERS, WebSocketHandler } from "./requestHandling.js";
+import {WebSocketHandler } from "./requestHandling.js";
 import { VisualHandler } from "./visualHandler.js";
+import { MAIN_HANDLERS, MESSAGE_TYPES,CALL_TYPES,FILE_TYPES,USER_HANDLES } from "../core/Actions.js"
+import { eventBus } from "../core/EventBus.js";
 
 
 const CALL_CONFIGURATION = {iceServers: [
@@ -127,7 +129,7 @@ export class CallHandler {
                     candidate:event.candidate,
                     to:this.to
                 }
-                console.log("Sending ice candidates ",payload)
+                
                 this.webSocketHandler.sendData(JSON.stringify(payload))
             }
         }
@@ -142,10 +144,11 @@ export class CallHandler {
     connectTracks(){
         this.peerConnection.addEventListener('track',(event) => {
             const videoStream = event.streams[0]
-            if(this.onlyAudio){
-                query(".call-only-audio-audio").srcObject = videoStream;
-                return;
-            }
+            console.log("Adding tracks",videoStream)
+            // if(this.onlyAudio){
+            //     query(".call-only-audio-audio").srcObject = videoStream;
+            //     return;
+            // }
             document.querySelector(".call-other-user-video").srcObject = videoStream;
 
         })
@@ -188,13 +191,6 @@ export class CallHandler {
         this.onlyAudio  = onlyAudio;
         
         this.peerConnection = new RTCPeerConnection(CALL_CONFIGURATION);
-
-        const contact = this.dataHandler.contacts.filter(e => e['contact'] === from)
-        if(contact.length > 0){
-            const user = contact[0]
-            this.visualHandler.initCallReceiverDialogWithUserInfo(user)
-        
-        }
         this.lastOffer = offer;
     }
 
@@ -207,7 +203,7 @@ export class CallHandler {
      * Add the ice candidates that were given in the time period before setting remote description.
      */
     async answerEventByReceiver(){
-        const stream = await navigator.mediaDevices.getUserMedia({video:!this.onlyAudio,audio:true})
+        const stream = await navigator.mediaDevices.getUserMedia({video:!this.onlyAudio,audio:false})
 
         stream.getTracks().forEach((e) => {
             this.peerConnection.addTrack(e,stream)
@@ -219,12 +215,11 @@ export class CallHandler {
             mainHandler:MAIN_HANDLERS.CALL,
             handlerOne:CALL_TYPES.CALL_ANSWER_CREATED,
             answer,
-            to:this.to
+            to:this.to,
+            onlyAudio:this.onlyAudio
         }
 
-        this.webSocketHandler.sendData(JSON.stringify(userPayload))
-        this.visualHandler.setCallTab(!this.onlyAudio ? '3' : '5')
-
+        eventBus.emit(CALL_TYPES.CALL_ANSWER_CREATED,userPayload)
         await this.addReceivedIceCandidatesBeforeRemoteDescription()
     }
 
@@ -238,9 +233,7 @@ export class CallHandler {
     async onCallAnswerReceived(payload){
         const {answer,to} = payload;
         await this.peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
-
         this.okayToSetRemoteDescription = true;
-        this.visualHandler.setCallTab(!this.onlyAudio ? '3' : '5')
         await this.addReceivedIceCandidatesBeforeRemoteDescription()
     }
 
@@ -277,17 +270,8 @@ export class CallHandler {
      * Signal comes via the web socket
      * @param {*} payload 
      */
-    async onOtherUserCloseTheCall(payload){
-        const {to} = getSelectedUsersID()
-        console.log("Other user closed the call ",payload)
-        const contacts = this.dataHandler.contacts.filter(e => e.contact === to)
-        if(contacts.length > 0 ){
-            const contact = contacts[0]
-            this.visualHandler.updateCallEndedBy(contact.name)
-        }else{
-            this.visualHandler.updateCallEndedBy("User")
-        }
-        
+    async onOtherUserCloseTheCall(contact){
+        this.visualHandler.updateCallEndedBy(contact.name)
         this.visualHandler.setCallTab('4')
     }
 
@@ -298,18 +282,8 @@ export class CallHandler {
      */
     async closeCall(){
         this.peerConnection.close()
-        const userPayload = {
-            mainHandler:MAIN_HANDLERS.CALL,
-            handlerOne:CALL_TYPES.CALL_WAS_DISCONNECTED_BY_USER,
-            to:this.to
-        }
-        this.webSocketHandler.sendData(JSON.stringify(userPayload))
-        this.visualHandler.closeCallDialog()
+        eventBus.emit(CALL_TYPES.CALL_WAS_DISCONNECTED_BY_USER,{to:this.to})
     }
-
-
-    
-
-
-
 }
+
+export const callHandler = new CallHandler()

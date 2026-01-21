@@ -3,7 +3,8 @@ import { DataHandlerMessageModel, WebSocketMessageModel } from "../models.js";
 import { getCurrentActiveContact, isEmptyObject, println, readData } from "../utils.js";
 import { DataHandler } from "./dataHandler.js";
 import { Notification } from "./notification.js";
-import { APIHandler, MAIN_HANDLERS, MESSAGE_TYPES, WebSocketHandler } from "./requestHandling.js";
+import { APIHandler,WebSocketHandler } from "./requestHandling.js";
+import { MAIN_HANDLERS, MESSAGE_TYPES,CALL_TYPES,FILE_TYPES,USER_HANDLES } from "../core/Actions.js"
 import { VisualHandler } from "./visualHandler.js";
 
 

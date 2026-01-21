@@ -1,10 +1,12 @@
+import { eventBus } from "../core/EventBus.js";
 import { DatabaseMessageModel, DataHandlerMessageModel, FormattedDataHandlerMessageModel } from "../models.js";
 import { FILE_CATEGORY_TYPES, fileTypeToCategory, println, query, sortDateKeys } from "../utils.js";
 import { DataHandler } from "./dataHandler.js";
 import { FileHandler } from "./fileHandler.js";
 import { Notification, setNotificationsToZero } from "./notification.js";
 import { TabHandler } from "./tabHandler.js";
-
+import { MAIN_HANDLERS, MESSAGE_TYPES,CALL_TYPES,FILE_TYPES,USER_HANDLES, VISUAL_EVENTS } from "../core/Actions.js"
+import { tagBaseOnDate } from "../utils/dateUtils.js";
 // import UIkit from "../lib/uikit.js"
 
 // Message List
@@ -65,7 +67,9 @@ export class VisualHandler {
             for(let i = 0 ; i < entries.length;i++){
                 if(entries[i].isIntersecting){
                     const seenMessageID = entries[i].target.getAttribute('messageid');
-                    this.dataHandler.onSeenMessage(seenMessageID);
+                    const time  = (new Date()).toUTCString()
+                    eventBus.emit(MESSAGE_TYPES.SET_SEEN_MESSAGE,{messageID:seenMessageID,time});
+                    console.log("Emiited ",VISUAL_EVENTS.MESSAGE_HAS_BEEN_READ_BY_USER)
                     objs.unobserve(entries[i].target)                    
                 }
             }
@@ -396,7 +400,7 @@ export class VisualHandler {
      */
     addOneToday(payload){
         const messages = [payload]
-        const msg = this.dataHandler.reformatMessages(messages)[0]
+        const msg = tagBaseOnDate(messages)
         let root = query('.message-list[date="Today"]')
         if(!root){
             const chatDetails = query(".chat-info")
@@ -415,8 +419,8 @@ export class VisualHandler {
 
 
         }
-
-        const element = this.updateMessageList(msg,true,true)
+    
+        const element = this.updateMessageList(msg[0],true,true)
         root.appendChild(element)
     }
 
@@ -522,6 +526,8 @@ export class VisualHandler {
      */
     setMessageDelivered(messageId){
         const message = query(`.message[messageid="${messageId}"]`)
+       
+        if(!message)return;
         const delivered = message.getAttribute('delivered') === "true"
         if(!delivered){
             const icon = document.createElement('span')
@@ -731,7 +737,6 @@ class ModalHandler {
     }
 
     showModal(name){
-        console.log(this.modals)
         this.modals[name].showModal()
     }
 
@@ -751,3 +756,6 @@ class ModalHandler {
    
 }
 
+
+
+export const visualHandler = new VisualHandler()

@@ -1,3 +1,5 @@
+import { CALL_TYPES, CLICK_EVENTS, FILE_INTERACTIONS } from "../core/Actions.js";
+import { eventBus } from "../core/EventBus.js";
 import {query, readData} from "../utils.js"
 import { CallHandler } from "./callHandler.js";
 import { FileHandler } from "./fileHandler.js";
@@ -45,7 +47,7 @@ const MENU_PICTURE_UPLOAD_ACTIONS_CLS_NAME = ".mobile-picture-file-dialog-anchor
 const MENU_PDF_UPLOAD_ACTIONS_CLS_NAME = ".mobile-pdf-file-dialog-anchor"
 const MENU_VIDEO_UPLOAD_ACTIONS_CLS_NAME = ".mobile-video-file-dialog-anchor"
 
-const FILE_INPUT_MODAL_TAG = "file-input-modal"
+export const FILE_INPUT_MODAL_TAG = "file-input-modal"
 
 
 // Call handling
@@ -160,9 +162,10 @@ export class UIClickHandler extends ClickHandler {
     }
 
     onVideoUploadDialogClick(event){
-        const inputElement = document.getElementById("FILES-SHARE_INPUT")
-        inputElement.accept = "video/*"
-        this.visualHandler.modalHandler.showModal(FILE_INPUT_MODAL_TAG)
+        eventBus.emit(FILE_INTERACTIONS.FILE_UPLOAD_DIALOG_OPEN,true)
+        // const inputElement = document.getElementById("FILES-SHARE_INPUT")
+        // inputElement.accept = "video/*"
+        // this.visualHandler.modalHandler.showModal(FILE_INPUT_MODAL_TAG)
     }
 
     onPDFFileUploadDialogClick(event){
@@ -180,23 +183,22 @@ export class UIClickHandler extends ClickHandler {
 
 
     async onUploadAllFileClicked(event){
-        console.log("Uploading")
-        const files = this.fileHandler.yetToUploadFiles
-        for(let i = 0 ; i < files.length;i++){
-            const file = files[i]
-            const progressElement = query(`.file-share-progress[upload-index="${i}"]`)
+        eventBus.emit(FILE_INTERACTIONS.FILES_UPLOAD,true);
+        // const files = this.fileHandler.yetToUploadFiles
+        // for(let i = 0 ; i < files.length;i++){
+        //     const file = files[i]
+        //     const progressElement = query(`.file-share-progress[upload-index="${i}"]`)
             
-            await this.fileHandler.fileSendStart(file,(chuck,chucks) => {
-                progressElement.max = chucks;
-                progressElement.value = chuck;
-            })
+        //     await this.fileHandler.fileSendStart(file,(chuck,chucks) => {
+        //         progressElement.max = chucks;
+        //         progressElement.value = chuck;
+        //     })
 
-            this.visualHandler.clearUploadFilePreviewContainer(i)
-        }
-
-        setTimeout(() => {
-            this.visualHandler.modalHandler.hideModal(FILE_INPUT_MODAL_TAG)
-        },2000)
+        //     this.visualHandler.clearUploadFilePreviewContainer(i)
+        // }
+        // setTimeout(() => {
+        //     this.visualHandler.modalHandler.hideModal(FILE_INPUT_MODAL_TAG)
+        // },2000)
     }
 
     /**
@@ -204,9 +206,10 @@ export class UIClickHandler extends ClickHandler {
      * @param {*} event 
      */
     async onVideoCallButtonClick(event){
+
             const data = readData('selectedContactInfo')
             data['state'] = "Calling..."
-            const stream = await navigator.mediaDevices.getUserMedia({video:true,audio:true})
+            const stream = await navigator.mediaDevices.getUserMedia({video:true,audio:false})
             await this.callHandler.initCall(stream)
             this.visualHandler.initCallerDialogWithUserInfo(data)
     }
@@ -217,7 +220,7 @@ export class UIClickHandler extends ClickHandler {
     async onAudioCallClicked(event){
            const data = readData('selectedContactInfo')
             data['state'] = "Calling..."
-            const stream = await navigator.mediaDevices.getUserMedia({audio:true})
+            const stream = await navigator.mediaDevices.getUserMedia({audio:false})
             await this.callHandler.initCall(stream,true)
             this.visualHandler.initCallerDialogWithUserInfo(data);
     }
@@ -235,7 +238,7 @@ export class UIClickHandler extends ClickHandler {
      * @param {*} event 
      */
     async onCallAcceptByReceiver(event){
-          await this.callHandler.answerEventByReceiver()
+          eventBus.emit(CLICK_EVENTS.CALL_ACCEPT)
     }
 
     /**

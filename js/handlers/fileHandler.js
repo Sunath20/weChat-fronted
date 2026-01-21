@@ -1,9 +1,10 @@
 import { DatabaseMessageModel } from "../models.js";
 import { getSelectedUsersID, indexDBRequestToFunction } from "../utils.js";
 import { DataHandler } from "./dataHandler.js";
-import { APIHandler, FILE_TYPES, MAIN_HANDLERS, MESSAGE_TYPES, WebSocketHandler } from "./requestHandling.js";
+import { APIHandler, WebSocketHandler } from "./requestHandling.js";
 import { VisualHandler } from "./visualHandler.js";
-
+import { MAIN_HANDLERS, MESSAGE_TYPES,CALL_TYPES,FILE_TYPES,USER_HANDLES } from "../core/Actions.js"
+import { eventBus } from "../core/EventBus.js";
 
 
 
@@ -82,8 +83,10 @@ export class FileHandler {
 
         plainMessage.friend = to
         plainMessage.fromUser = true;
-        this.dataHandler.addMessage(plainMessage)
-        this.visualHandler.addOneToday(plainMessage)
+
+        eventBus.emit(MESSAGE_TYPES.GET_BACK_CREATED_MESSAGE,plainMessage)
+        // this.dataHandler.addMessage(plainMessage)
+        // this.visualHandler.addOneToday(plainMessage)
         
         const newURl = this.serverBase + `/files/updateFile/${updatingFilePath}`
         let offset = 0;
@@ -301,3 +304,6 @@ export class WebFileHandler extends FileHandler {
 
 
 }
+
+
+export const fileHandler = new WebFileHandler()

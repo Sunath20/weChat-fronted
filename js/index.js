@@ -1,5 +1,6 @@
 
 // Import handlers
+import { eventBus } from "./core/EventBus.js"
 import { CallHandler } from "./handlers/callHandler.js"
 import { ChatHandler } from "./handlers/chatHandler.js"
 import { ClickHandler, UIClickHandler } from "./handlers/clickHandler.js"
@@ -8,17 +9,29 @@ import { DateHandler } from "./handlers/dateHandler.js"
 import { FileHandler, WebFileHandler } from "./handlers/fileHandler.js"
 import {KeyBoardHandler} from "./handlers/keyboardHandler.js"
 import { Notification, setNotificationsToZero } from "./handlers/notification.js"
-import {WebSocketHandler,MessageHandler, MAIN_HANDLERS,APIHandler, UserConfigHandler} from "./handlers/requestHandling.js"
+import {WebSocketHandler,MessageHandler,APIHandler, UserConfigHandler} from "./handlers/requestHandling.js"
 import {VisualHandler} from "./handlers/visualHandler.js"
 import { DatabaseMessageModel, DataHandlerMessageModel } from "./models.js"
+import { MAIN_HANDLERS, MESSAGE_TYPES,CALL_TYPES,FILE_TYPES,USER_HANDLES, FILE_INTERACTIONS } from "./core/Actions.js"
 
 import { getContacts, getSelectedUsersID, println, query, readData } from "./utils.js"
-
+import { initMessageListener } from "./listeners/messageListener.js"
+import { initVisualListener } from "./listeners/visualListener.js"
+import { initCallListener } from "./listeners/callListener.js"
+import { visualHandler } from "./handlers/visualHandler.js"
+import { callHandler } from "./handlers/callHandler.js"
+import { fileHandler } from "./handlers/fileHandler.js"
 const {from} = getSelectedUsersID()
+
+initMessageListener()
+initVisualListener()
+initCallListener()
 
 if(!from){
     window.location.href = "/login.html"
 }
+
+
 
 
 const webSocket = new WebSocketHandler()
@@ -29,12 +42,14 @@ const apiHandler = new APIHandler()
 const chatHandler = new ChatHandler(apiHandler)
 const notification = new Notification()
 const keyboardHandler = new KeyBoardHandler()
-const visualHandler = new VisualHandler()
+
 const dataHandler = new DataHandler()
 const dateHandler = new DateHandler()
-const fileHandler = new WebFileHandler()
+
 const clickHandler = new UIClickHandler()
-const callHandler = new CallHandler()
+
+
+
 
 
 
@@ -382,8 +397,9 @@ fileInputZone.addEventListener('drop',(event) => {
     event.stopPropagation()
     fileInputZone.style.display = "none"
     const files = event.dataTransfer.files
-    visualHandler.uploadFilePreviews(files)
-    fileHandler.setYetToUploadFiles(files)
+     eventBus.emit(FILE_INTERACTIONS.FILE_SET_UPLOAD_PREVIEWS,files)
+    // visualHandler.uploadFilePreviews(files)
+    // fileHandler.setYetToUploadFiles(files)
 })
 
 
@@ -393,9 +409,7 @@ const inputFilesElement = document.getElementById("FILES-SHARE_INPUT")
 inputFilesElement.addEventListener('change',async (event) => {
     const files = event.target.files
     if(files.length > 0){
-        fileInputZone.style.display = "none"
-        visualHandler.uploadFilePreviews(files)
-        fileHandler.setYetToUploadFiles(files)
+        eventBus.emit(FILE_INTERACTIONS.FILE_SET_UPLOAD_PREVIEWS,files)
     }
 
 
