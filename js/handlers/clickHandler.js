@@ -1,9 +1,9 @@
 import { CALL_TYPES, CLICK_EVENTS, FILE_INTERACTIONS } from "../core/Actions.js";
 import { eventBus } from "../core/EventBus.js";
 import {query, readData} from "../utils.js"
-import { CallHandler } from "./callHandler.js";
+import { callHandler, CallHandler } from "./callHandler.js";
 import { FileHandler } from "./fileHandler.js";
-import { VisualHandler } from "./visualHandler.js";
+import { visualHandler, VisualHandler } from "./visualHandler.js";
 
 
 
@@ -220,9 +220,9 @@ export class UIClickHandler extends ClickHandler {
     async onAudioCallClicked(event){
            const data = readData('selectedContactInfo')
             data['state'] = "Calling..."
-            const stream = await navigator.mediaDevices.getUserMedia({audio:false})
-            await this.callHandler.initCall(stream,true)
-            this.visualHandler.initCallerDialogWithUserInfo(data);
+            const stream = await navigator.mediaDevices.getUserMedia({audio:false,video:true})
+            await callHandler.initCall(stream,true)
+            visualHandler.initCallerDialogWithUserInfo(data);
     }
 
     /**

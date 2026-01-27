@@ -51,7 +51,7 @@ export class DataHandler {
 
                 const dateOne = message1['createdAt'] || message1['createdat']
                 const dateTwo = message2['createdAt'] || message2['createdat']
-                console.log((new Date(dateOne)).getTime(),(new Date(dateTwo)).getTime())
+                
                 return ((new Date(dateOne)).getTime() - (new Date(dateTwo)).getTime()) > 0 ? -1 : 1
 
             })

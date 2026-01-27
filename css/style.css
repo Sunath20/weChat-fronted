@@ -517,3 +517,7 @@
 .full-width {
     width: 100%;
 }
+
+video {
+    width: 360px !important;
+}

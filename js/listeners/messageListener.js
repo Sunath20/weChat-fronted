@@ -1,22 +1,30 @@
 import {eventBus} from "../core/EventBus.js"
-import {CALL_TYPES, MAIN_HANDLERS, MESSAGE_TYPES, VISUAL_EVENTS} from "../core/Actions.js"
-import {webSocketHandler} from "../handlers/requestHandling.js"
+import {CALL_TYPES, FILE_EVENTS, FILE_TYPES, FRIEND_INTERACTIONS, MAIN_HANDLERS, MESSAGE_TYPES, STORE_EVENTS, VISUAL_EVENTS} from "../core/Actions.js"
+import {apiHandler, webSocketHandler} from "../handlers/requestHandling.js"
 import { getSelectedUsersID } from "../utils.js"
 import { DataHandlerMessageModel } from "../models.js"
-import { addNewMessageToStore, updateMessageInStore } from "../core/store.js"
+import { addMessages, addNewFileMessageToStore, addNewMessageToStore, resolveCurrentUser, resolveRoomID, resolveSelectedUser, setCurrentRoomID, setRoomID, updateMessageInStore } from "../core/store.js"
+
 export function initMessageListener(){
 
-
     eventBus.on(MESSAGE_TYPES.MESSAGE_RECEIVED,(payload) => { 
-        addNewMessageToStore(payload)
-        webSocketHandler.sendDeliveredMessage(payload.from,payload['_id']);
+       const msg = addMessages(payload)
+       eventBus.emit(STORE_EVENTS.MESSAGE_ADDED,msg[0])
+
+       console.log("Message Received from other user ",payload)
+        webSocketHandler.sendDeliveredMessage(payload.from,payload['_id'],payload['createdat']);
     })
 
-    eventBus.on(MESSAGE_TYPES.GET_BACK_CREATED_MESSAGE,(payload) => {
-        const message = new DataHandlerMessageModel(payload)
-        message.friend = payload.friend;
-        message['fromUser'] = true
-        addNewMessageToStore(message)
+    eventBus.on(MESSAGE_TYPES.FILE_MESSAGE_RECEIVE_TO_OTHER_USER,(payload) => {
+          const msg = addMessages(payload)
+         eventBus.emit(STORE_EVENTS.MESSAGE_ADDED,msg[0])
+
+        webSocketHandler.sendDeliveredMessage(payload.from,payload['_id']);
+    });
+
+    eventBus.on(MESSAGE_TYPES.GET_BACK_CREATED_MESSAGE,(payload) => { 
+       const msg = addMessages(payload)
+       eventBus.emit(STORE_EVENTS.MESSAGE_ADDED,msg[0])
     })
 
 
@@ -58,6 +66,42 @@ export function initMessageListener(){
         webSocketHandler.sendData(JSON.stringify(payload))
     })
 
-  
+
+    eventBus.on(FILE_EVENTS.FILE_UPLOAD_END,(message) => {
+        const currentUser = resolveCurrentUser()
+        const selectedUser  = resolveSelectedUser()
+
+        const payload = {
+                    from:currentUser.contact,
+                    to:selectedUser.contact,
+                    message:message,
+                    mainHandler:MAIN_HANDLERS.MESSAGE,
+                    handlerOne:MESSAGE_TYPES.FILE_MESSAGE_SEND_TO_OTHER_USER}
+        webSocketHandler.sendData(JSON.stringify(payload))
+    })
+
+
+    // Fiend
+    eventBus.on(STORE_EVENTS.SELECTED_FRIEND_SET,(payload) => {
+        const {contact} = payload
+        let roomID = resolveRoomID(contact)
+        if(!roomID){
+            webSocketHandler.setTheRoomForSelected(contact);
+        }else{
+            setCurrentRoomID(roomID)
+        }
+    })
+
+    eventBus.on(MESSAGE_TYPES.ROOM_CREATED,(payload) => {
+        const currentUser = resolveCurrentUser()
+        let friend = currentUser.contact === payload.personone ? payload.persontwo : payload.personone
+        setRoomID(friend,payload['_id'])
+        setCurrentRoomID(payload['_id'])
+    })
+
+    eventBus.on(MESSAGE_TYPES.LOAD_NOT_DELIVERED_MESSAGES,payload => {
+        const {contact,messageID} = payload;
+        apiHandler.loadNotDeliveredMessages(contact,messageID)
+    })
 
 }

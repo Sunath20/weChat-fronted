@@ -2,11 +2,13 @@ import { eventBus } from "../core/EventBus.js";
 import { DatabaseMessageModel, DataHandlerMessageModel, FormattedDataHandlerMessageModel } from "../models.js";
 import { FILE_CATEGORY_TYPES, fileTypeToCategory, println, query, sortDateKeys } from "../utils.js";
 import { DataHandler } from "./dataHandler.js";
-import { FileHandler } from "./fileHandler.js";
+import { fileHandler, FileHandler } from "./fileHandler.js";
 import { Notification, setNotificationsToZero } from "./notification.js";
 import { TabHandler } from "./tabHandler.js";
 import { MAIN_HANDLERS, MESSAGE_TYPES,CALL_TYPES,FILE_TYPES,USER_HANDLES, VISUAL_EVENTS } from "../core/Actions.js"
-import { tagBaseOnDate } from "../utils/dateUtils.js";
+import { getToday, tagBaseOnDate, todayAsEasyViewFormat } from "../utils/dateUtils.js";
+import { resolveContacts, resolveNotifications } from "../core/store.js";
+import { apiHandler } from "./requestHandling.js";
 // import UIkit from "../lib/uikit.js"
 
 // Message List
@@ -69,7 +71,6 @@ export class VisualHandler {
                     const seenMessageID = entries[i].target.getAttribute('messageid');
                     const time  = (new Date()).toUTCString()
                     eventBus.emit(MESSAGE_TYPES.SET_SEEN_MESSAGE,{messageID:seenMessageID,time});
-                    console.log("Emiited ",VISUAL_EVENTS.MESSAGE_HAS_BEEN_READ_BY_USER)
                     objs.unobserve(entries[i].target)                    
                 }
             }
@@ -194,9 +195,9 @@ export class VisualHandler {
         const fileOBJ = JSON.parse(payload.content); 
         const filePath = payload.messageID + "-"+fileOBJ['fileName']
         const mimeType = fileOBJ['mimeType']
-      
-        this.fileHandler.readFile(filePath).then(e => {
-            
+        
+        fileHandler.readFile(filePath).then(e => {
+
             // When the file is in the local storage
             if(e && e['fileBlob']){
                 if(!mimeType)return;
@@ -214,7 +215,7 @@ export class VisualHandler {
 
             // File gonna retrieve from the server
             if(!e){
-                 this.fileHandler.retrieveFileFromServer(
+                 fileHandler.retrieveFileFromServer(
                     payload.roomId,
                     payload.messageID,
                     fileOBJ['fileName'],
@@ -222,7 +223,7 @@ export class VisualHandler {
                 ).then(x => {
                     if(x){
                         const fileName = `${payload.messageID}-${fileOBJ['fileName']}`
-                        this.fileHandler.saveFile(fileName,x)
+                        fileHandler.saveFile(fileName,x)
                         
                         if(!mimeType)return;
                         if(mimeType.includes("image")){
@@ -245,6 +246,7 @@ export class VisualHandler {
 
     previewOfTheMessageImage(fileBlob,messageID){
                 const messageElement = query(`.message[messageID="${messageID}"]`)
+                if(!messageElement)return;
                 const type = fileBlob.type
                 const msg = messageElement.querySelector(".message-content-if")
                 const img = document.createElement('img')
@@ -255,6 +257,7 @@ export class VisualHandler {
 
     previewOfThePDF(fileBlob,messageID){
          const messageElement = query(`.message[messageID="${messageID}"]`)
+         if(!messageElement)return;
                 const type = fileBlob.type
                 const msg = messageElement.querySelector(".message-content-if-after-name")
                 const viewButton = document.createElement('button')
@@ -271,6 +274,7 @@ export class VisualHandler {
 
     previewOfTheVideo(fileBlob,messageID){
         const messageElement = query(`.message[messageID="${messageID}"]`)
+        if(!messageElement)return;
         const msg = messageElement.querySelector(".message-content-if")
         const video = document.createElement('video')
         video.src = URL.createObjectURL(fileBlob)
@@ -281,6 +285,7 @@ export class VisualHandler {
 
     previewOfTheAudio(fileBlob,messageID){
          const messageElement = query(`.message[messageID="${messageID}"]`)
+         if(!messageElement)return;
         const msg = messageElement.querySelector(".message-content-if")
         const video = document.createElement('audio')
         video.src = URL.createObjectURL(fileBlob)
@@ -354,14 +359,6 @@ export class VisualHandler {
      */
     addMessagesToTheView(messages){
         const messageKeys = Object.keys(messages)
-
-        // Remove the special dates
-        messageKeys.splice(messageKeys.indexOf("Today"),1);
-        messageKeys.splice(messageKeys.indexOf("Yesterday"),1)
-        this.drawBaseOnDate('Yesterday',messages['Yesterday'])
-        this.drawBaseOnDate('Today',messages['Today'])
-        delete messages['Yesterday']
-        delete messages['Today']
         this.updatePreviousMessage(messages)
     }
 
@@ -432,39 +429,43 @@ export class VisualHandler {
      * @param {*} date 
      * @param {*} messages 
      */
-    updatePreviousMessage(messages){
+    updatePreviousMessage(messages,addAfter=false){
 
         if(!messages)return;
 
         let dateKeys = Object.keys(messages)
-        dateKeys = sortDateKeys(dateKeys.map(e => e))
-
+        dateKeys = sortDateKeys(dateKeys)
+        
         for(let i = 0 ; i < dateKeys.length;i++){
             const filter = `.message-list[date="${dateKeys[i]}"]`
-            const element = query(filter)
+            
+            let element = query(filter)
             const elementMessages = messages[dateKeys[i]].map(e => this.updateMessageList(e,true,true));
 
-            if(element != null || element != undefined){
-                
+            if(element !== null && element !== undefined){          
                 for(let j = 0; j < elementMessages.length;j++){
-                    element.insertBefore(elementMessages[j],element.children[j])
+                    if(addAfter){
+                        element.appendChild(elementMessages[j])
+                    }else{
+                        element.insertBefore(elementMessages[j],element.children[j])
+                    }
+                    
                 }   
-                
-                
             }else{
                     const newMessageContainer = document.createElement('div')
                     newMessageContainer.className = 'message-list'
                     newMessageContainer.setAttribute('date',dateKeys[i])
                     const dateAdder = document.createElement('h4')
                     dateAdder.className = 'date-specifier'
-                    dateAdder.innerText = dateKeys[i]
+                    dateAdder.innerText = dateKeys[i] === todayAsEasyViewFormat() ? "Today" : dateKeys[i]
 
                     newMessageContainer.append(dateAdder)
+                    
                     newMessageContainer.append(...elementMessages)
-
+                    
                     const chat = query('.chat-info')
                     chat.insertBefore(newMessageContainer,chat.children[0])
-                          
+                    
             }
         }
 
@@ -546,6 +547,7 @@ export class VisualHandler {
      */
     readMessage(messageID){
         const element = query(`.message[messageid="${messageID}"]`)
+        this.setMessageDelivered(messageID)
         if(element){
             element.setAttribute('read','true')
         }
@@ -599,8 +601,22 @@ export class VisualHandler {
     clearUploadFilePreviewContainer(index,timeout=2000){
         setTimeout(() => {
             const element = query(`.upload-file-instance[upload-index="${index}"]`)
-            element.remove()
+            if(element){
+                element.remove()
+            }
+            
         },timeout)
+    }
+
+    updateUploadProgress(payload){
+        const {index,totalChunks,chunkIndex} = payload;
+         const progressElement = query(`.file-share-progress[upload-index="${index}"]`)
+         progressElement.max = totalChunks;
+         progressElement.value = chunkIndex;
+
+         if(totalChunks === chunkIndex){
+            this.clearUploadFilePreviewContainer(index)
+         }
     }
 
    
@@ -626,7 +642,7 @@ export class VisualHandler {
         friendsContainer.innerHTML = ``
     
         // Get the contacts from the storage
-        let contacts = this.dataHandler.contacts;
+        let contacts = resolveContacts()
        
         // Define a template so we can loop it
         function template(details){
@@ -655,7 +671,7 @@ export class VisualHandler {
     
         }
         const formatTemplate = template.bind(this)
-        const notifications = this.dataHandler.notifications
+        const notifications = resolveNotifications()
         if(!contacts)return;
         contacts.map(e => {
             e['notifications'] = notifications[e.contact]
@@ -719,6 +735,13 @@ export class VisualHandler {
         this.tabHandler.showTab(TAB_LEFT_SIDE_APP_TAG,index)
     }
 
+
+    // Friends
+    renderSelectedFriend(friendDetails){
+        this.setCurrentFriend(friendDetails);
+        // this.clearChat()
+        this.setFriendNotificationsToZero(friendDetails.contact)
+    }
 }
 
 

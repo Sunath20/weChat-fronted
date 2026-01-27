@@ -1,137 +1,151 @@
-Here is the current situation calling is okay now , first of all.
+Add file listener
 
+export function initFileListener(){
 
-export function initMessageListener(){
-
-
-    eventBus.on(MESSAGE_TYPES.MESSAGE_RECEIVED,(payload) => { 
-        addNewMessageToStore(payload)
-        webSocketHandler.sendDeliveredMessage(payload.from,payload['_id']);
+    eventBus.on(FILE_INTERACTIONS.FILE_SET_UPLOAD_PREVIEWS,payload => {
+        setUploadFiles(payload)
     })
 
-    eventBus.on(MESSAGE_TYPES.GET_BACK_CREATED_MESSAGE,(payload) => {
-        const message = new DataHandlerMessageModel(payload)
-        message.friend = payload.friend;
-        message['fromUser'] = true
-        addNewMessageToStore(message)
-    })
+    eventBus.on(FILE_INTERACTIONS.FILES_UPLOAD,async payload => {
+        const files = getUploadingFiles()
 
-
-    eventBus.on(MESSAGE_TYPES.MESSAGE_DELIVERED,(payload) => {
-        updateMessageInStore(payload.from,payload.messageID,payload.changes)
-    })
-
-    eventBus.on(MESSAGE_TYPES.RECEIVE_LIST_OF_MESSAGE_DELIVERED,(payload) => {
-        const {messageIDList,deliveredTime,from} = payload
-        messageIDList.forEach((e) => {
-            updateMessageInStore(from,e,{userReceivedAt:deliveredTime})
-        })
-    })
-
-    eventBus.on(MESSAGE_TYPES.RECEIVE_SEEN_MESSAGE,(payload) => {
-        const {changes,from,messageID} = payload;
-        updateMessageInStore(from,messageID,changes)
-    })
-
-    eventBus.on(MESSAGE_TYPES.SET_SEEN_MESSAGE,payload => {
-        const {messageID,time} = payload;
-        const {to} = getSelectedUsersID()
-        webSocketHandler.sendSeenMessage(messageID,to,time)
-    })
-
-
-    eventBus.on(CALL_TYPES.CALL_WAS_DISCONNECTED_BY_USER,(payload) => {
-        
-        const userPayload = {
-                    mainHandler:MAIN_HANDLERS.CALL,
-                    handlerOne:CALL_TYPES.CALL_WAS_DISCONNECTED_BY_USER,
-                    to:payload.to
+        for(let i = 0; i < files.length;i++){
+            await apiHandler.uploadMediaFile(files[i],i)
         }
 
-        webSocketHandler.sendData(JSON.stringify(userPayload))
+        eventBus.emit(FILE_EVENTS.FILE_UPLOAD_ALL_FINISHED,true)
     })
 
-    eventBus.on(CALL_TYPES.CALL_ANSWER_CREATED,payload => {
+    eventBus.on(FILE_EVENTS.FILE_SAVE_LOCALLY,payload => {
+        fileHandler.saveFile(payload.savingName,payload.file);
+    })
+
+    eventBus.on(FILE_EVENTS.FILE_UPLOAD_ALL_FINISHED,(payload) => {
+        setUploadFiles([])
+    })
+
+}
+
+
+
+Add file upload visual events
+
+   // File Handling
+    eventBus.on(FILE_INTERACTIONS.FILE_UPLOAD_DIALOG_OPEN,payload => {
+        visualHandler.modalHandler.showModal(FILE_INPUT_MODAL_TAG)
+    })
+
+    eventBus.on(FILE_INTERACTIONS.FILE_SET_UPLOAD_PREVIEWS,payload => {
+        visualHandler.uploadFilePreviews(payload)
+    })
+
+    eventBus.on(FILE_EVENTS.FILE_CHUNK_COMPLETED,(payload) => {
+        visualHandler.updateUploadProgress(payload)
+    })
+
+   
+
+
+    eventBus.on(FILE_EVENTS.FILE_UPLOAD_ALL_FINISHED,(payload) => {
+        visualHandler.clearFileUploadPreview()
+        visualHandler.modalHandler.hideModal(FILE_INPUT_MODAL_TAG)
+    })
+
+
+Listen to file messages and add them
+
+    eventBus.on(MESSAGE_TYPES.FILE_MESSAGE_RECEIVE_TO_OTHER_USER,(payload) => {
+        console.log("Receive file ",payload)
+        addNewFileMessageToStore(payload)
+        webSocketHandler.sendDeliveredMessage(payload.from,payload['_id']);
+    });
+
+
+Send the message to other user when the file upload complete
+
+    eventBus.on(FILE_EVENTS.FILE_UPLOAD_END,(message) => {
+        const currentUser = resolveCurrentUser()
+        const selectedUser  = resolveSelectedUser()
+
+        const payload = {
+                    from:currentUser.contact,
+                    to:selectedUser.contact,
+                    message:message,
+                    mainHandler:MAIN_HANDLERS.MESSAGE,
+                    handlerOne:MESSAGE_TYPES.FILE_MESSAGE_SEND_TO_OTHER_USER
+                }
+        console.log("Other guy get the message now ",payload)
         webSocketHandler.sendData(JSON.stringify(payload))
     })
-}
 
 
-export function initVisualListener(){
-    
-    eventBus.on(STORE_EVENTS.MESSAGE_ADDED,message => {
-        const msg = new DataHandlerMessageModel(message)
-        visualHandler.addOneToday(msg)
-    })
+Create a function in api Handler in order to send the file and emit events base on the chunk and finish event
+  async uploadMediaFile(file,fileIndex){
+        const fileName = file.name;
+        eventBus.emit(FILE_EVENTS.FILE_UPLOAD_BEGIN,file);
+        // TODO - Format this and get from store if possible
+        const {personOne,personTwo} = getSelectedUsersID(true)
+        const {from,to} = getSelectedUsersID()
 
+        const localPath = "/files/startFileUpload"
+        const url = new URL(this.serverBase+localPath)
+        const query = url.searchParams
+        query.set('personOne',personOne);
+        query.set('personTwo',personTwo);
+        query.set('fileName',fileName);
+        query.set('sentByID',from)
+        query.set('mimeType',file.type)
 
-    eventBus.on(MESSAGE_TYPES.MESSAGE_DELIVERED,(payload) => {
-        visualHandler.setMessageDelivered(payload.messageID)
-    })
+        
 
-    eventBus.on(MESSAGE_TYPES.RECEIVE_LIST_OF_MESSAGE_DELIVERED,(payload) => {
-        const {messageIDList} = payload
-        messageIDList.forEach(e => {
-            visualHandler.setMessageDelivered(e)
-        })
-    })
+        const response = await (fetch(url.toString(),{method:"GET"}).then(e => e.json()))
+        const updatingFilePath = response['filePath']
+        const savingName = response['fileName']
+        const plainMessage  = new DatabaseMessageModel(response['message'])
+        
 
-    eventBus.on(MESSAGE_TYPES.RECEIVE_SEEN_MESSAGE,(payload) => {
-        const {messageID} = payload
-        visualHandler.readMessage(messageID)
-    })
+        // this.saveFile(savingName,file);
+        eventBus.emit(FILE_EVENTS.FILE_SAVE_LOCALLY,{savingName,file})
 
-    eventBus.on(STORE_EVENTS.CALLING_CONTACT_SET,payload => {
-        console.log("Update caller ",payload)
-        visualHandler.initCallReceiverDialogWithUserInfo(payload)
-    })
+        plainMessage.friend = to
+        plainMessage.fromUser = true;
 
-    eventBus.on(CALL_TYPES.CALL_ANSWER_CREATED,payload => {
-        visualHandler.setCallTab(!payload.onlyAudio ? '3' : '5')
-    })
+        eventBus.emit(MESSAGE_TYPES.GET_BACK_CREATED_MESSAGE,plainMessage)
+        // this.dataHandler.addMessage(plainMessage)
+        // this.visualHandler.addOneToday(plainMessage)
+        
+        const newURl = this.serverBase + `/files/updateFile/${updatingFilePath}`
+        let offset = 0;
+        let chunkIndex = 0;
+        const chunkSize = 1024*1024
 
-    eventBus.on(CALL_TYPES.CALL_ANSWER_RECEIVED,payload => {
-         visualHandler.setCallTab(!payload.onlyAudio ? '3' : '5')
-    })
+        const totalChunks = Math.ceil(file.size / chunkSize);
+        
+        while(offset < file.size){
+            const slice = file.slice(offset,offset+chunkSize);
+            const buffer = await slice.arrayBuffer()
+           
+            const response = await  fetch(newURl,{
+                method:"POST",
+                headers:{
+                    "Content-Type": "application/octet-stream",
+                    "X-Chunk-Index": chunkIndex,
+                    "X-File-Name": file.name,
+                    "X-File-Size": file.size
+                },
+                body:buffer,
+            })
 
-    eventBus.on(CALL_TYPES.CALL_WAS_DISCONNECTED_BY_USER,payload => {
-        visualHandler.closeCallDialog()
-    })
+            if(!response.ok){
+                break;
+            }
+            
+            // TODO - Update the chunk in the UI
+            offset = offset + chunkSize
+            chunkIndex += 1;
+            eventBus.emit(FILE_EVENTS.FILE_CHUNK_COMPLETED,{index:fileIndex,chunkIndex,totalChunks})
+        }
 
-    eventBus.on(CALL_TYPES.CALL_WAS_DISCONNECTED_BY_USER_RECEIVED,payload => {
-        const contact = getCallingContact()
-        visualHandler.updateCallEndedBy(contact ? contact.name : "No name")
-        visualHandler.setCallTab('4')
-    })
-
-}
-
-
-export function initCallListener(cH=callHandler){
-   
-    eventBus.on(CALL_TYPES.CALL_OFFER_RECEIVED,(payload) => {
-        const contact = resolveCallingContact(payload)
-        console.log("This is the caller ",contact)
-        setCallingContact(contact)
-        console.log("okay saved ",getCallingContact())
-        eventBus.emit(STORE_EVENTS.CALLING_CONTACT_SET,contact)
-        cH.onCallOfferReceived(payload)
-    })
-
-    eventBus.on(CALL_TYPES.CALL_ANSWER_RECEIVED,async (payload) => {
-        await cH.onCallAnswerReceived(payload)
-    })
-
-    eventBus.on(CALL_TYPES.CALL_ICE_NEW_CANDIDATE_RECEIVED,async payload => {
-        await cH.onNewIceCandidate(payload)
-    })
-
-    eventBus.on(CLICK_EVENTS.CALL_ACCEPT,async (payload) => {
-        const contact = getCallingContact()
-        await cH.answerEventByReceiver(contact)
-    })
-
-
-}
-
-Now let's improve more
+        eventBus.emit(FILE_EVENTS.FILE_CHUNK_COMPLETED,{index:fileIndex,chunkIndex:totalChunks,totalChunks})
+        eventBus.emit(FILE_EVENTS.FILE_UPLOAD_END,response['message']);
+    }

@@ -1,7 +1,7 @@
 import { DatabaseMessageModel } from "../models.js";
 import { getSelectedUsersID, indexDBRequestToFunction } from "../utils.js";
 import { DataHandler } from "./dataHandler.js";
-import { APIHandler, WebSocketHandler } from "./requestHandling.js";
+import { apiHandler, APIHandler, WebSocketHandler } from "./requestHandling.js";
 import { VisualHandler } from "./visualHandler.js";
 import { MAIN_HANDLERS, MESSAGE_TYPES,CALL_TYPES,FILE_TYPES,USER_HANDLES } from "../core/Actions.js"
 import { eventBus } from "../core/EventBus.js";
@@ -164,7 +164,8 @@ export class FileHandler {
          */
       async retrieveFileFromServer(roomID,messageID,fileName,mimeType){
 
-        const url = this.serverBase + `/files/readFile/${roomID}/${messageID}-${fileName}`
+        
+        const url = apiHandler.getServerBase() +  `/files/readFile/${roomID}/${messageID}-${fileName}`
         const response = await fetch(url)
         if(!response.ok)return;
         const reader = response.body.getReader()

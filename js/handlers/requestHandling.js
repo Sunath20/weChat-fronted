@@ -7,7 +7,7 @@ import { MessageDeliveredPayload } from "../serverPayloads.js"
 import { SendMessageDeliveredPayload } from "../clientPayloads.js"
 import { DateHandler } from "./dateHandler.js"
 import { eventBus } from "../core/EventBus.js"
-import { MAIN_HANDLERS, MESSAGE_TYPES,CALL_TYPES,FILE_TYPES,USER_HANDLES } from "../core/Actions.js"
+import { MAIN_HANDLERS, MESSAGE_TYPES,CALL_TYPES,FILE_TYPES,USER_HANDLES, FILE_EVENTS, ERRORS } from "../core/Actions.js"
 
 
 
@@ -186,7 +186,7 @@ export class WebSocketHandler {
         this.sendData(JSON.stringify(payload))
     }
 
-    sendDeliveredMessage(friend,messageID){
+    sendDeliveredMessage(friend,messageID,createdAt){
          const inputPayload = new SendMessageDeliveredPayload()
          inputPayload.mainHandler = MAIN_HANDLERS.MESSAGE
          inputPayload.handlerOne = MESSAGE_TYPES.SET_MESSAGE_DELIVERED
@@ -194,6 +194,7 @@ export class WebSocketHandler {
          inputPayload.time = time
          inputPayload.to = friend
          inputPayload.messageID = messageID
+         inputPayload.createdAt = createdAt;
          this.sendData(JSON.stringify(inputPayload))
     }
 }
@@ -436,7 +437,7 @@ export class UserConfigHandler {
     }
 
     handle(payload){
-        console.log("Receive payload ",payload)
+        
         const handlerOne = payload['handlerOne']
         if(handlerOne && this.handlers[handlerOne]){
             this.handlers[handlerOne](payload)
@@ -460,7 +461,7 @@ export class UserConfigHandler {
         if(online && to===contact){
             this.visualHandler.setCurrentFriendStatus("Online")
         }else{
-            console.log(payload)
+            
             this.visualHandler.setCurrentFriendStatus(lastOnlineAt ? this.dateHandler.convertToLastSeenAt(lastOnlineAt) : "Offline")
         }
     }
@@ -663,7 +664,7 @@ export class APIHandler {
      * @param {string} messageID - last message id
      * @returns 
      */
-    loadNotDeliveredMessages(contact,messageID){
+    async loadNotDeliveredMessages(contact,messageID){
         const localPath = "/messages/load-new-messages"
         const url = new URL(this.serverBase + localPath)
         const parameters = url.searchParams
@@ -674,7 +675,17 @@ export class APIHandler {
         parameters.set('personTwo',personTwo)
         parameters.set('messageID',messageID)
 
-        return jsonFetch(url.toString(),{method:"GET"})
+        try{
+            const response = await jsonFetch(url.toString(),{method:"GET"})
+            const messages = await response.json()
+            console.log(messages,"found something",MESSAGE_TYPES.LOADED_NOT_DELIVERED_MESSAGES,{messages,contact})
+            eventBus.emit(MESSAGE_TYPES.LOADED_NOT_DELIVERED_MESSAGES,{messages,contact})            
+        }catch(error){
+            console.error(error)
+            eventBus.emit(ERRORS.MESSAGE_LOADING_FAILED)
+        }
+
+       
     }
 
 
@@ -691,6 +702,107 @@ export class APIHandler {
     }
 
 
+
+    async uploadMediaFile(file,fileIndex){ 
+        const initResult = await this.initFileUpload(file,fileIndex)
+        const {filePath,messageMeta} = initResult
+        const {totalChunks} = await this.uploadChunks(file,fileIndex,filePath)
+        await this.finalizeUploadFile(fileIndex,totalChunks,messageMeta)
+    }
+
+
+  async initFileUpload(file, fileIndex) {
+    // 1. Emit upload start (UI / state)
+    eventBus.emit(FILE_EVENTS.FILE_UPLOAD_BEGIN, {
+        file,
+        fileIndex
+    });
+
+    // 2. Resolve participants
+    const { personOne, personTwo } = getSelectedUsersID(true);
+    const { from, to } = getSelectedUsersID();
+
+    // 3. Build request
+    const url = new URL(`${this.serverBase}/files/startFileUpload`);
+    url.searchParams.set("personOne", personOne);
+    url.searchParams.set("personTwo", personTwo);
+    url.searchParams.set("fileName", file.name);
+    url.searchParams.set("sentByID", from);
+    url.searchParams.set("mimeType", file.type);
+
+    // 4. Create file message in backend
+    const response = await fetch(url.toString(), { method: "GET" });
+    const data = await response.json();
+
+    // 5. Persist file locally
+    eventBus.emit(FILE_EVENTS.FILE_SAVE_LOCALLY, {
+        savingName: data.fileName,
+        file
+    });
+
+    // 6. Build message meta (domain object)
+    const messageMeta = data.message;
+    messageMeta.friend = to;
+    messageMeta.fromUser = true;
+    messageMeta.from = from;
+    messageMeta.to = to;
+
+
+    // 7. Optimistic UI update (store + view)
+    eventBus.emit(MESSAGE_TYPES.GET_BACK_CREATED_MESSAGE, messageMeta);
+
+    // 8. Return upload metadata
+    return {
+        filePath: data.filePath,
+        messageMeta
+    };
+}
+
+
+
+    async uploadChunks(file,fileIndex,updatingFilePath){
+        const newURl = this.serverBase + `/files/updateFile/${updatingFilePath}`
+        let offset = 0;
+        let chunkIndex = 0;
+        const chunkSize = 1024*1024
+
+        const totalChunks = Math.ceil(file.size / chunkSize);
+        
+        while(offset < file.size){
+            const slice = file.slice(offset,offset+chunkSize);
+            const buffer = await slice.arrayBuffer()
+           
+            const response = await  fetch(newURl,{
+                method:"POST",
+                headers:{
+                    "Content-Type": "application/octet-stream",
+                    "X-Chunk-Index": chunkIndex,
+                    "X-File-Name": file.name,
+                    "X-File-Size": file.size
+                },
+                body:buffer,
+            })
+
+            if(!response.ok){
+                break;
+            }
+            
+            // TODO - Update the chunk in the UI
+            offset = offset + chunkSize
+            chunkIndex += 1;
+            eventBus.emit(FILE_EVENTS.FILE_CHUNK_COMPLETED,{index:fileIndex,chunkIndex,totalChunks})
+        }
+
+        eventBus.emit(FILE_EVENTS.FILE_CHUNK_COMPLETED,{index:fileIndex,chunkIndex:totalChunks,totalChunks})
+
+        return {totalChunks}
+    }
+
+    async finalizeUploadFile(fileIndex,totalChunks,message){  
+        eventBus.emit(FILE_EVENTS.FILE_UPLOAD_END,message);
+    }
+
+
     getServerBase(){return this.serverBase}
 
 
@@ -700,6 +812,7 @@ export class APIHandler {
 
 
 export const webSocketHandler = new WebSocketHandler()
+export const apiHandler = new APIHandler()
 
 eventBus.on(MESSAGE_TYPES.MESSAGE_RECEIVED,(payload) => {
     const message = new DatabaseMessageModel(payload)

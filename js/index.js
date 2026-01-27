@@ -12,7 +12,7 @@ import { Notification, setNotificationsToZero } from "./handlers/notification.js
 import {WebSocketHandler,MessageHandler,APIHandler, UserConfigHandler} from "./handlers/requestHandling.js"
 import {VisualHandler} from "./handlers/visualHandler.js"
 import { DatabaseMessageModel, DataHandlerMessageModel } from "./models.js"
-import { MAIN_HANDLERS, MESSAGE_TYPES,CALL_TYPES,FILE_TYPES,USER_HANDLES, FILE_INTERACTIONS } from "./core/Actions.js"
+import { MAIN_HANDLERS, MESSAGE_TYPES,CALL_TYPES,FILE_TYPES,USER_HANDLES, FILE_INTERACTIONS, FRIEND_INTERACTIONS, APP_EVENTS } from "./core/Actions.js"
 
 import { getContacts, getSelectedUsersID, println, query, readData } from "./utils.js"
 import { initMessageListener } from "./listeners/messageListener.js"
@@ -21,11 +21,20 @@ import { initCallListener } from "./listeners/callListener.js"
 import { visualHandler } from "./handlers/visualHandler.js"
 import { callHandler } from "./handlers/callHandler.js"
 import { fileHandler } from "./handlers/fileHandler.js"
+import { apiHandler } from "./handlers/requestHandling.js"
+import { initFileListener } from "./listeners/fileListener.js"
+import { initDataListener } from "./listeners/dataListener.js"
+
 const {from} = getSelectedUsersID()
 
+
 initMessageListener()
+initDataListener()
 initVisualListener()
 initCallListener()
+initFileListener()
+
+
 
 if(!from){
     window.location.href = "/login.html"
@@ -38,7 +47,6 @@ const webSocket = new WebSocketHandler()
 const messageHandler = new MessageHandler()
 const userConfigHandler = new UserConfigHandler()
 
-const apiHandler = new APIHandler()
 const chatHandler = new ChatHandler(apiHandler)
 const notification = new Notification()
 const keyboardHandler = new KeyBoardHandler()
@@ -143,17 +151,10 @@ saveNewProfileAction.addEventListener('click',saveNewProfile);
 function selectClickedFriend(friendDetails){
     return () => {
 
-        // Set the visual setup for the friend
-        visualHandler.setCurrentFriend(friendDetails);
-        visualHandler.clearChat()
-        dataHandler.notifications[friendDetails.contact] = 0
-        visualHandler.setFriendNotificationsToZero(friendDetails.contact)
-    
-        // Update the selected friend in the storage
-        localStorage.setItem('selectedContactInfo',JSON.stringify(friendDetails))
+        eventBus.emit(FRIEND_INTERACTIONS.FRIEND_SELECTED,friendDetails)
 
-        // Create a room if a room does not exist for selected two peoples
-        webSocket.setTheRoomForSelected(friendDetails);
+        // Set the visual setup for the friend
+        dataHandler.notifications[friendDetails.contact] = 0
 
         // Get the messages from the storage
         const currentMessages = dataHandler.getMessages(friendDetails['contact'])
@@ -181,68 +182,73 @@ function selectClickedFriend(friendDetails){
         }else{
             
             // Get the messages and reformat them into data handler messages
-            const msgs = dataHandler.reformatMessages(currentMessages.map( (e) => {
-                const model = new DataHandlerMessageModel(e)
-                return model;
-            } ))
+            // const msgs = dataHandler.reformatMessages(currentMessages.map( (e) => {
+            //     const model = new DataHandlerMessageModel(e)
+            //     return model;
+            // } ))
 
 
-            // Group the messages base on the dates
-            const msgOBJ    = dataHandler.groupMessagesBaseOnDate(msgs)
-            visualHandler.addMessagesToTheView(msgOBJ)
+            // // Group the messages base on the dates
+            // const msgOBJ    = dataHandler.groupMessagesBaseOnDate(msgs)
+            // visualHandler.addMessagesToTheView(msgOBJ)
 
             // Load the not loaded delivered messages
-            const lastMessage = msgs[msgs.length-1]
-            apiHandler.loadNotDeliveredMessages(friendDetails.contact,lastMessage.messageID).then(e => e.json()).then(e => {
+        //     const lastMessage = msgs[msgs.length-1]
+        //     apiHandler.loadNotDeliveredMessages(friendDetails.contact,lastMessage.messageID).then(e => e.json()).then(e => {
                 
 
-                const mappedMessages = e.map(x => {
-                   const m = new DataHandlerMessageModel(x)
-                   const fromUser = x['sentbyid'] !== friendDetails['contact'];
-                   m.fromUser = fromUser;
-                   m.friend = friendDetails['contact']
-                   return m;
-                })
+        //         const mappedMessages = e.map(x => {
+        //            const m = new DataHandlerMessageModel(x)
+        //            const fromUser = x['sentbyid'] !== friendDetails['contact'];
+        //            m.fromUser = fromUser;
+        //            m.friend = friendDetails['contact']
+        //            return m;
+        //         })
 
              
 
-                mappedMessages.forEach(e => {
-                    dataHandler.addMessage(e);
-                })
+        //         mappedMessages.forEach(e => {
+        //             dataHandler.addMessage(e);
+        //         })
 
-                const formattedMessages = dataHandler.formatLoadedMessages(mappedMessages)
-                visualHandler.updateLaterMessages(formattedMessages)
+        //         const formattedMessages = dataHandler.formatLoadedMessages(mappedMessages)
+        //         visualHandler.updateLaterMessages(formattedMessages)
 
-                dataHandler.updateNotDeliveredMessages(friendDetails['contact'])
-                dataHandler.loadDeliveredAndSeenMessageTimesIf(friendDetails['contact']).then(e => {
+        //         dataHandler.updateNotDeliveredMessages(friendDetails['contact'])
+        //         dataHandler.loadDeliveredAndSeenMessageTimesIf(friendDetails['contact']).then(e => {
                  
-                    for(let i = 0 ; i < e.length;i++){
-                        const msg = e[i]
+        //             for(let i = 0 ; i < e.length;i++){
+        //                 const msg = e[i]
                         
-                        if(msg['userReceivedAt']){
+        //                 if(msg['userReceivedAt']){
                             
-                            dataHandler.updateMessage(friendDetails['contact'],msg['messageID'],{userReceivedAt:msg['userReceivedAt']})
-                            visualHandler.setMessageDelivered(msg['messageID'])
-                        }
+        //                     dataHandler.updateMessage(friendDetails['contact'],msg['messageID'],{userReceivedAt:msg['userReceivedAt']})
+        //                     visualHandler.setMessageDelivered(msg['messageID'])
+        //                 }
 
-                        if(msg['userRead']){
-                            dataHandler.updateMessage(friendDetails['contact'],msg['messageID'],{userRead:true,userReadMessageAt:msg['userReadMessageAt']});
-                            visualHandler.readMessage(msg['messageID'])
-                        }
+        //                 if(msg['userRead']){
+        //                     dataHandler.updateMessage(friendDetails['contact'],msg['messageID'],{userRead:true,userReadMessageAt:msg['userReadMessageAt']});
+        //                     visualHandler.readMessage(msg['messageID'])
+        //                 }
 
 
-                    }
-                })
-        })}
+        //             }
+        //         })
+        // })
+    
+    }
         
         chatHandler.currentMessageContacts[friendDetails.contact] = {}
         query(".main-container").setAttribute("showMessages","true")
-        userConfigHandler.askIfFriendOnline(friendDetails['contact'])
-        userConfigHandler.sendMyOnlineStatus(friendDetails['contact'])
+        
+        // userConfigHandler.askIfFriendOnline(friendDetails['contact'])
+        // userConfigHandler.sendMyOnlineStatus(friendDetails['contact'])
     }
 }
 
 
+
+eventBus.on(APP_EVENTS.READY,() => {renderSelectedFriendOnStartup()})
 
 // Set the send message action
 const SEND_MSG_CLS_NAME = ".send-message-action"
@@ -339,7 +345,7 @@ document.querySelector(".chat-info").addEventListener('scroll',async (event) => 
 
 // RUN THE MAIN FUNCTIONS
 
-renderSelectedFriendOnStartup();
+// renderSelectedFriendOnStartup();
 visualHandler.setOnFriendClicked(selectClickedFriend)
 visualHandler.renderFriends(selectClickedFriend)
 sendTextMessageAction();
@@ -416,16 +422,19 @@ inputFilesElement.addEventListener('change',async (event) => {
 })
 
 
-visualHandler.setLeftSideAppTab("2")
+visualHandler.setLeftSideAppTab("1")
 
 query(".go-back-to-friend-button").addEventListener('click',(event) => {
     query(".main-container").setAttribute('showMessages','false')
 })
 
 
+// eventBus.emit(APP_EVENTS.READY,true)
+
+
 
 // Actions that repeats in a cycle
-setInterval(() => {
-    const {to} = getSelectedUsersID()
-    userConfigHandler.askIfFriendOnline(to)
-},10000)
+// setInterval(() => {
+//     const {to} = getSelectedUsersID()
+//     userConfigHandler.askIfFriendOnline(to)
+// },10000)

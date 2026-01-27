@@ -64,7 +64,8 @@ export class DataHandlerMessageModel extends DatabaseMessageModel{
 export class FormattedDataHandlerMessageModel extends DataHandlerMessageModel {
     constructor(payload){
         super(payload)
-        this.dateTag = payload['dateRenderTag']
-        this.timeTag = payload['timeRenderTag']
-    }
+        this.dateTag = payload['dateRenderTag'] || payload['dateTag']
+        this.timeTag = payload['timeRenderTag']  || payload['timeTag']
+        this.friend = payload['friend'] || this.friend
+     }
 }

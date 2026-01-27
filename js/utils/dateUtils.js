@@ -9,7 +9,7 @@ const DAY_TO_MILLE_SECONDS = 86400000
  * Turns the date into more readable format like 25 nov 2025
  * @param {string} date 
  */
-export function dateToEasyViewFormat(date){
+export function dateToEasyViewFormat(date,todayAndYesterday=false){
         const dateOBJ = new Date(date);
         const month =  dateOBJ.getMonth() + 1;
         const day = dateOBJ.getDate()
@@ -18,12 +18,13 @@ export function dateToEasyViewFormat(date){
         return day + "/" + month+ "/" + year
     }
 
-export function tagBaseOnDate(messages){
+export function tagBaseOnDate(messages,todayAndYesterday=true){
         const today = getToday()
         const tomorrow = getTomorrow(today)
         const yesterday = getYesterday(today)
         return messages.map(e => {
             const dateInfo = (new Date(e.createdAt))
+
             const date = dateInfo.getTime()
 
             let hours = dateInfo.getHours()
@@ -39,17 +40,9 @@ export function tagBaseOnDate(messages){
 
             e['timeRenderTag'] = hours + ":" + minutes
 
-            if( yesterday <= date < today){
-                e['dateRenderTag'] = 'Yesterday'
-            }
-        
-            if(today <= date){
-                e['dateRenderTag'] = 'Today'
-            }
             
-            if(date < yesterday){
-                e['dateRenderTag'] = dateToEasyViewFormat(e.createdAt)
-            }
+            e['dateRenderTag'] = dateToEasyViewFormat(e.createdAt)
+            
             
             return new FormattedDataHandlerMessageModel(e);
 
@@ -101,4 +94,13 @@ export function getToday(){
 
 export function getYesterday(today){
     return today - DAY_TO_MILLE_SECONDS
+}
+
+export function todayAsEasyViewFormat(){
+    const time = (new Date())
+    const date = time.getDate()
+    const month = time.getMonth() + 1
+    const year = time.getFullYear()
+
+    return date + "/" + month + "/" + year
 }

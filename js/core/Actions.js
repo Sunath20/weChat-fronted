@@ -14,7 +14,9 @@ export const MESSAGE_TYPES = {
     SET_SEEN_MESSAGE: "SET_MESSAGE_SEEN",
     RECEIVE_SEEN_MESSAGE: "MESSAGE_SEEN",
     FILE_MESSAGE_SEND_TO_OTHER_USER: "FILE_MESSAGE_SENT",
-    FILE_MESSAGE_RECEIVE_TO_OTHER_USER: "FILE_MESSAGE_RECEIVED"
+    FILE_MESSAGE_RECEIVE_TO_OTHER_USER: "FILE_MESSAGE_RECEIVED",
+    LOAD_NOT_DELIVERED_MESSAGES:"msg_load_not_delivered_messages",
+    LOADED_NOT_DELIVERED_MESSAGES:"msg_loaded_not_delivered_messages"
 }
 
 export const USER_HANDLES = {
@@ -48,7 +50,10 @@ export const MAIN_HANDLERS = {
 
 export const STORE_EVENTS = {
     MESSAGE_ADDED:"STORE_NEW_MESSAGE_ADDED",
-    CALLING_CONTACT_SET:"CALLING_CONTACT_SET"
+    LOADED_MESSAGES_ADDED:"LOADED_MESSAGES_ADDED",
+    CALLING_CONTACT_SET:"CALLING_CONTACT_SET",
+    SELECTED_FRIEND_SET:"SELECTED_FRIEND_SET",
+    ADD_NOT_DELIVERED_MESSAGES:"ADD_NOT_DELIVERED_MESSAGES"
 }
 
 export const VISUAL_EVENTS = {
@@ -58,6 +63,10 @@ export const VISUAL_EVENTS = {
 
 export const CLICK_EVENTS = {
     CALL_ACCEPT:"UI_CALL_ACCEPT_CLICKED"
+}
+
+export const DATA_EVENTS = {
+    MESSAGES_ADD:"data_add_messages"
 }
 
 
@@ -81,6 +90,11 @@ export const FILE_EVENTS = {
     FILE_UPLOAD_PREVIEW:"file_upload_preview",
     FILE_PROGRESS_MADE:"file_upload_progress",
     FILE_UPLOAD_FINISHED:"file_upload_finished",
+    FILE_SAVE_LOCALLY:"file_save_locally",
+    FILE_UPLOAD_END:"file_upload_end",
+    FILE_UPLOAD_BEGIN:"file_upload_begin",
+    FILE_CHUNK_COMPLETED:"file_one_chunk_completed",
+    FILE_UPLOAD_ALL_FINISHED:"file_upload_all_finished"
 }
 
 export const FILE_INTERACTIONS = {
@@ -88,4 +102,21 @@ export const FILE_INTERACTIONS = {
     FILE_UPLOAD_DIALOG_CLOSE:"file_close_upload_dialog",
     FILE_SET_UPLOAD_PREVIEWS:"file_on_upload_previews",
     FILES_UPLOAD:"file_on_upload"
+}
+
+
+// Friends
+
+export const FRIEND_INTERACTIONS = {
+    FRIEND_SELECTED:"friend_selected_to_chat"
+}
+
+
+export const APP_EVENTS = {
+  READY: "app_ready"
+}
+
+// Errors
+export const ERRORS = {
+    MESSAGE_LOADING_FAILED:"error_message_load_failed"
 }

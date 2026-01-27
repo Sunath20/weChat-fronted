@@ -116,21 +116,21 @@ export function sortDateKeys(keys){
         const [day2,mont2,year2] = b.split("/")
         
         if(year > year2){
-            return 1;   
+            return -1;   
         }else if(year < year2){
-            return -1;
+            return 1;
         }
 
         if(month > mont2){
-            return 1;
+            return -1;
         }else if(month < mont2){
-            return -1
+            return 1
         }
 
         if(day > day2){
-            return 1;
-        }else if(day < day2){
             return -1;
+        }else if(day < day2){
+            return 1;
         }
 
 
@@ -139,6 +139,10 @@ export function sortDateKeys(keys){
 
 
 
+}
+
+export function getLatestDateKey(keys){
+    return sortDateKeys(keys)[0]
 }
 
 /**

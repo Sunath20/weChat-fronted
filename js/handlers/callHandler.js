@@ -144,7 +144,6 @@ export class CallHandler {
     connectTracks(){
         this.peerConnection.addEventListener('track',(event) => {
             const videoStream = event.streams[0]
-            console.log("Adding tracks",videoStream)
             // if(this.onlyAudio){
             //     query(".call-only-audio-audio").srcObject = videoStream;
             //     return;
@@ -188,7 +187,7 @@ export class CallHandler {
     async onCallOfferReceived(payload){
         const {offer,from,onlyAudio} = payload;
         this.from = from;
-        this.onlyAudio  = onlyAudio;
+        this.onlyAudio  = false;
         
         this.peerConnection = new RTCPeerConnection(CALL_CONFIGURATION);
         this.lastOffer = offer;
@@ -203,7 +202,7 @@ export class CallHandler {
      * Add the ice candidates that were given in the time period before setting remote description.
      */
     async answerEventByReceiver(){
-        const stream = await navigator.mediaDevices.getUserMedia({video:!this.onlyAudio,audio:false})
+        const stream = await navigator.mediaDevices.getUserMedia({video:true,audio:false})
 
         stream.getTracks().forEach((e) => {
             this.peerConnection.addTrack(e,stream)

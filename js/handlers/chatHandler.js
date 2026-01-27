@@ -55,8 +55,7 @@ export class ChatHandler {
      * @param {WebSocketMessageModel} payload 
      */
     newMessage(payload){
-        console.log("New message was recevied ")
-      
+    
         const {from,message} = payload;
 
         // // Check object emptiness and set it to not null and add the message
