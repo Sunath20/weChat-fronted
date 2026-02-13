@@ -5,10 +5,11 @@ import { DataHandler } from "./dataHandler.js";
 import { fileHandler, FileHandler } from "./fileHandler.js";
 import { Notification, setNotificationsToZero } from "./notification.js";
 import { TabHandler } from "./tabHandler.js";
-import { MAIN_HANDLERS, MESSAGE_TYPES,CALL_TYPES,FILE_TYPES,USER_HANDLES, VISUAL_EVENTS } from "../core/Actions.js"
+import { MAIN_HANDLERS, MESSAGE_TYPES,CALL_TYPES,FILE_TYPES,USER_HANDLES, VISUAL_EVENTS, FILE_EVENTS } from "../core/Actions.js"
 import { getToday, tagBaseOnDate, todayAsEasyViewFormat } from "../utils/dateUtils.js";
 import { resolveContacts, resolveNotifications } from "../core/store.js";
 import { apiHandler } from "./requestHandling.js";
+import { messageListToDateBase } from "../utils/dataFormatting.js";
 // import UIkit from "../lib/uikit.js"
 
 // Message List
@@ -48,6 +49,7 @@ const MODAL_TAG_CALL_DIALOG = "call-dialog"
 // Tab TAGS
 const TAB_CALL_TAG = "call-tag"
 const TAB_LEFT_SIDE_APP_TAG = "left-side-app"
+const TAB_FRIENDS_DETAILS = "friends-details-tab"
 
 /**
  * Responsible for maintain render elements,delete and update elements
@@ -82,9 +84,7 @@ export class VisualHandler {
         // Setting the tabs
         this.tabHandler.registerTab(TAB_CALL_TAG, query(".call-dialog"))
         this.tabHandler.registerTab(TAB_LEFT_SIDE_APP_TAG,query(".left-side-of-app"))
-
-
-        
+        this.tabHandler.registerTab(TAB_FRIENDS_DETAILS,query(".friends-details-tab"))
     }
 
     /**
@@ -155,9 +155,9 @@ export class VisualHandler {
     messageElement.setAttribute('messageID',payload.messageID)
     messageElement.innerHTML = `
         <div class="message-content-if"> </div>
-        <h4>${text}</h4>
+        <h4 class="message-main-text">${text}</h4>
         <div class="message-content-if-after-name"> </div>
-        <h6>${payload.timeTag}</h6>
+        <span class="message-time-tag">${payload.timeTag}</span>
     ` 
 
 
@@ -165,12 +165,12 @@ export class VisualHandler {
     if(payload.fromUser){
         messageElement.innerHTML += `
 
-         <span class="uk-margin-small-right" uk-icon="check"></span>
+         <span uk-icon="icon: check; ratio: 0.5" class="message-deliver-info"></span>
         `
 
         if(payload.userReceivedAt){
         messageElement.innerHTML += `
-        <span class="uk-margin-small-right" uk-icon="check"></span>
+        <span uk-icon="icon: check; ratio: 0.5" class="message-deliver-info" ></span>
         `
     }
     }
@@ -195,52 +195,79 @@ export class VisualHandler {
         const fileOBJ = JSON.parse(payload.content); 
         const filePath = payload.messageID + "-"+fileOBJ['fileName']
         const mimeType = fileOBJ['mimeType']
-        
-        fileHandler.readFile(filePath).then(e => {
 
-            // When the file is in the local storage
-            if(e && e['fileBlob']){
-                if(!mimeType)return;
-                if(mimeType.includes("image")){
-                    this.previewOfTheMessageImage(e['fileBlob'],payload.messageID)
-                }else if(mimeType.includes("video")){
-                    this.previewOfTheVideo(e['fileBlob'],payload.messageID)
-                }else if(mimeType.includes("audio")){
-                    this.previewOfTheAudio(e['fileBlob'],payload.messageID)
-                }else if(mimeType.includes("pdf")){
-                    this.previewOfThePDF(e['fileBlob'],payload.messageID)
-                }
-               
-            }
-
-            // File gonna retrieve from the server
-            if(!e){
-                 fileHandler.retrieveFileFromServer(
-                    payload.roomId,
-                    payload.messageID,
-                    fileOBJ['fileName'],
-                    fileOBJ['mimeType']
-                ).then(x => {
-                    if(x){
-                        const fileName = `${payload.messageID}-${fileOBJ['fileName']}`
-                        fileHandler.saveFile(fileName,x)
-                        
-                        if(!mimeType)return;
-                        if(mimeType.includes("image")){
-                            this.previewOfTheMessageImage(x,payload.messageID)
-                        }else if(mimeType.includes("video")){
-                            this.previewOfTheVideo(x,payload.messageID)
-                        }else if(mimeType.includes("audio")){
-                            this.previewOfTheAudio(x,payload.messageID)
-                        }else if(mimeType.includes("pdf")){
-                           this.previewOfThePDF(e['fileBlob'],payload.messageID)
-                        }
-                    }
-                });
-            }
-
-
+        eventBus.emit(FILE_EVENTS.FILE_READ_LOCAL,{
+                    roomID:payload.roomId,
+                    messageID:payload.messageID,
+                    fileName:fileOBJ['fileName'],
+                    mimeType
         })
+        
+        // fileHandler.readFile(filePath).then(e => {
+
+        //     // When the file is in the local storage
+        //     if(e && e['fileBlob']){
+        //         if(!mimeType)return;
+        //         if(mimeType.includes("image")){
+        //             this.previewOfTheMessageImage(e['fileBlob'],payload.messageID)
+        //         }else if(mimeType.includes("video")){
+        //             this.previewOfTheVideo(e['fileBlob'],payload.messageID)
+        //         }else if(mimeType.includes("audio")){
+        //             this.previewOfTheAudio(e['fileBlob'],payload.messageID)
+        //         }else if(mimeType.includes("pdf")){
+        //             this.previewOfThePDF(e['fileBlob'],payload.messageID)
+        //         }
+               
+        //     }
+
+        //     // File gonna retrieve from the server
+        //     if(!e){
+        //          fileHandler.retrieveFileFromServer(
+        //             payload.roomId,
+        //             payload.messageID,
+        //             fileOBJ['fileName'],
+        //             fileOBJ['mimeType']
+        //         ).then(x => {
+        //             if(x){
+        //                 const fileName = `${payload.messageID}-${fileOBJ['fileName']}`
+        //                 fileHandler.saveFile(fileName,x)
+                        
+        //                 if(!mimeType)return;
+        //                 if(mimeType.includes("image")){
+        //                     this.previewOfTheMessageImage(x,payload.messageID)
+        //                 }else if(mimeType.includes("video")){
+        //                     this.previewOfTheVideo(x,payload.messageID)
+        //                 }else if(mimeType.includes("audio")){
+        //                     this.previewOfTheAudio(x,payload.messageID)
+        //                 }else if(mimeType.includes("pdf")){
+        //                    this.previewOfThePDF(e['fileBlob'],payload.messageID)
+        //                 }
+        //             }
+        //         });
+        //     }
+
+
+        // })
+    }
+
+
+    addFilePreviewAfterLoading({messageID,fileName,file,mimeType,fromNetwork=false}){
+        const blob = !fromNetwork ? file['fileBlob'] : file
+        if(!mimeType){
+            console.error("This one should rewrite - CASE No MIME TYPE FOR FILE")
+            return;
+        }
+
+          if(mimeType.includes("image")){
+            this.previewOfTheMessageImage(blob,messageID)
+        }else if(mimeType.includes("video")){
+            this.previewOfTheVideo(blob,messageID)
+        }else if(mimeType.includes("audio")){
+            this.previewOfTheAudio(blob,messageID)
+        }else if(mimeType.includes("pdf")){
+            this.previewOfThePDF(blob,messageID)
+        }
+               
     }
 
 
@@ -304,18 +331,6 @@ export class VisualHandler {
     }
 
 
-    /**
-     * Paint the selected friend base on the current friendDetails
-     * @param {Object} friendDetails 
-     */
-    setCurrentFriend(friendDetails){
-            // Change the name of the user in selected field
-        const container = document.querySelector(SELECTED_PERSON_INFO_CLS)  
-        const nameSpan = container.querySelector(".text-info > span")
-        nameSpan.innerText = friendDetails['name']
-    }
-
-
     setCurrentFriendStatus(status){
         const stateSpan = query(SELECTED_FRIEND_CURRENT_STATE_CLS_NAME)
         stateSpan.innerText = status
@@ -326,28 +341,11 @@ export class VisualHandler {
      * We will use chatHandler and notificationHandler to perform tasks like updateMessageCount and show the notification base on our inner html
      * @param {Object} payload 
      */
-    showNewsMessageNotification(payload) {
-    
-    const contact = this.contacts.filter(e => e.contact === payload['from'])
-    const from = contact ? contact[0]['name'] : payload['from']
-    const messageText = `
-    <h4>Message from ${from}</h4>
-    <button class="notification-close-button">Close</button>
-    `
-
-    /**
-     * Select the button in the above template and add a event listener to remove the notification
-     */
-    function DeleteNotification(){
-        query(".notification-close-button").addEventListener('click',(event) => {
-            this.notificationHandler.remove()       
-        })
-    }
-    this.notificationHandler.notify(messageText,5000,DeleteNotification);
-    const notificationSpan =  query(`.friend-notification-counter[contact="${payload['from']}"]`)
-    const numberOfNotifications = this.dataHandler.notifications[payload.from] //this.chatHandler.currentMessageContacts[payload['from']].messageCount
-    notificationSpan.setAttribute('notifications',numberOfNotifications);
-    notificationSpan.innerText = `${numberOfNotifications}` 
+    showNewsMessageNotification(friend,count) {
+        const notificationSpan =  query(`.friend-notification-counter[contact="${friend}"]`)
+        const numberOfNotifications = 1
+        notificationSpan.setAttribute('notifications',count)
+        notificationSpan.innerText = `${count}` 
     }
 
 
@@ -385,10 +383,7 @@ export class VisualHandler {
             })
         }
     
-
-
         query(MESSAGE_LIST_CLS_NAME).appendChild(messageList)
-    
     }
 
     /**
@@ -397,13 +392,14 @@ export class VisualHandler {
      */
     addOneToday(payload){
         const messages = [payload]
-        const msg = tagBaseOnDate(messages)
-        let root = query('.message-list[date="Today"]')
+        const msg = tagBaseOnDate(messages)[0]
+
+        let root = query(`.message-list[date="${msg.dateTag}"]`)
         if(!root){
             const chatDetails = query(".chat-info")
             const messageList = document.createElement('div')
             messageList.className = 'message-list'
-            messageList.setAttribute('date','Today')
+            messageList.setAttribute('date',msg.dateTag)
 
             const titleDetails = document.createElement('h6')
             titleDetails.className = 'date-specifier'
@@ -414,10 +410,9 @@ export class VisualHandler {
             messageList.append(titleDetails);
             chatDetails.append(messageList);
 
-
         }
     
-        const element = this.updateMessageList(msg[0],true,true)
+        const element = this.updateMessageList(msg,true,true)
         root.appendChild(element)
     }
 
@@ -437,6 +432,7 @@ export class VisualHandler {
         dateKeys = sortDateKeys(dateKeys)
         
         for(let i = 0 ; i < dateKeys.length;i++){
+            if(!dateKeys[i] || dateKeys[i] === "null")continue;
             const filter = `.message-list[date="${dateKeys[i]}"]`
             
             let element = query(filter)
@@ -447,7 +443,7 @@ export class VisualHandler {
                     if(addAfter){
                         element.appendChild(elementMessages[j])
                     }else{
-                        element.insertBefore(elementMessages[j],element.children[j])
+                        element.insertBefore(elementMessages[j],element.children[j === 0 ? 1 : j])
                     }
                     
                 }   
@@ -527,13 +523,14 @@ export class VisualHandler {
      */
     setMessageDelivered(messageId){
         const message = query(`.message[messageid="${messageId}"]`)
-       
         if(!message)return;
         const delivered = message.getAttribute('delivered') === "true"
         if(!delivered){
             const icon = document.createElement('span')
-            icon.setAttribute('uk-icon',"icon: check")
+            icon.className = 'message-deliver-info'
+            icon.setAttribute('uk-icon',"icon: check; ratio: 0.5")
             icon.setAttribute('delivered','true')
+            message.setAttribute('delivered','true')
             message.appendChild(icon)
         }
    
@@ -636,13 +633,42 @@ export class VisualHandler {
         this.onFriendClicked = this.onFriendClicked.bind(this)
     }
 
-    renderFriends(){
+
+    writeFriendTemplate(details){
+            
+        const parentDiv = document.createElement('div')
+            parentDiv.className = 'friend pointer'
+            parentDiv.setAttribute('friend-contact',details.contact)
+            parentDiv.onclick = this.onFriendClicked(details)
+            parentDiv.innerHTML =`
+                    
+                    <div class="photo">
+                        <img src="./img/userDefault.png"  alt="">
+                    </div>
+    
+                    <div class="info">
+                        <span>${details.name}</span>
+                        <span class="friend-notification-counter uk-badge" notifications="${details.notifications || 0}" contact=${details.contact}>${details.notifications || 0}</span>
+                    </div>
+            
+            
+                    `
+    
+            
+            return parentDiv;
+    
+    
+    }
+
+    renderFriends(contactsE,nodeClass=FRIEND_LIST_CLS_NAME){
+
         // Get the friend list container and set set it to null
-        const friendsContainer = query(FRIEND_LIST_CLS_NAME)
+        const friendsContainer = query(nodeClass)
         friendsContainer.innerHTML = ``
     
         // Get the contacts from the storage
-        let contacts = resolveContacts()
+        let contacts = contactsE || resolveContacts()
+
        
         // Define a template so we can loop it
         function template(details){
@@ -667,8 +693,6 @@ export class VisualHandler {
             
             return parentDiv;
     
-    
-    
         }
         const formatTemplate = template.bind(this)
         const notifications = resolveNotifications()
@@ -682,16 +706,15 @@ export class VisualHandler {
         });
     
     }
-    
-    
-    setFriendNotificationsToZero(contact){
-        const badgeElement = query(`.friend-notification-counter[contact="${contact}"]`)
 
-        if(badgeElement){
-            badgeElement.innerText = 0;
-            badgeElement.setAttribute('notifications',0)
-        }
+    addNewContact(details){
+        details['notifications'] = 0
+        const friendsContainer = query(FRIEND_LIST_CLS_NAME)
+        friendsContainer.appendChild(this.writeFriendTemplate(details))
     }
+    
+    
+  
 
 
 
@@ -735,12 +758,26 @@ export class VisualHandler {
         this.tabHandler.showTab(TAB_LEFT_SIDE_APP_TAG,index)
     }
 
+    setFriendsDetailsTab(index){
+        this.tabHandler.showTab(TAB_FRIENDS_DETAILS,index)
+    }
+
 
     // Friends
     renderSelectedFriend(friendDetails){
-        this.setCurrentFriend(friendDetails);
-        // this.clearChat()
-        this.setFriendNotificationsToZero(friendDetails.contact)
+             // Change the name of the user in selected field
+        const container = document.querySelector(SELECTED_PERSON_INFO_CLS)  
+        const nameSpan = container.querySelector(".text-info > span")
+        nameSpan.innerText = friendDetails['name']
+        
+    }
+
+
+    scrollToBottom(){
+        const element = query(MESSAGE_LIST_CLS_NAME)
+        requestAnimationFrame(() => {
+            element.scrollTop = element.scrollHeight;
+        })
     }
 }
 

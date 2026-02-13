@@ -635,13 +635,12 @@ export class APIHandler {
      * @param {*} skip 
      * @returns 
      */
-    loadPreviousMessages(contacts,timeAndDate,limit=10,skip=0){
+    async loadPreviousMessages(currentUser,selectedUser,timeAndDate,limit=10,skip=0){
         const localPath = "/messages/load-messages";
         const url = new URL(this.serverBase + localPath);
-
+    
         const query = url.searchParams
-
-        const [personOne,personTwo] = contacts.sort()
+        const [personOne,personTwo] = [currentUser,selectedUser].sort()
         
         query.set('personOne',personOne)
         query.set('personTwo',personTwo)
@@ -650,9 +649,19 @@ export class APIHandler {
         query.set('skip',skip)
 
         const requestPath = url.toString()
-        return jsonFetch(requestPath,{
-            method:"GET"
-        })
+        
+        try{
+            const messages =  await jsonFetch(requestPath,{
+                    method:"GET"
+                }).then(e => e.json());
+
+            console.log("These are the loaded messages ",messages,currentUser,selectedUser,timeAndDate)
+            eventBus.emit(MESSAGE_TYPES.LOADED_PREVIOUS_MESSAGES,{messages,messageWith:selectedUser})
+        }catch(error){
+            eventBus.emit(ERRORS.LOADING_PREVIOUS_MESSAGES_FAILED)
+        }
+
+       
     }
 
 
@@ -678,7 +687,6 @@ export class APIHandler {
         try{
             const response = await jsonFetch(url.toString(),{method:"GET"})
             const messages = await response.json()
-            console.log(messages,"found something",MESSAGE_TYPES.LOADED_NOT_DELIVERED_MESSAGES,{messages,contact})
             eventBus.emit(MESSAGE_TYPES.LOADED_NOT_DELIVERED_MESSAGES,{messages,contact})            
         }catch(error){
             console.error(error)

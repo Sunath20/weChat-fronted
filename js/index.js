@@ -12,7 +12,7 @@ import { Notification, setNotificationsToZero } from "./handlers/notification.js
 import {WebSocketHandler,MessageHandler,APIHandler, UserConfigHandler} from "./handlers/requestHandling.js"
 import {VisualHandler} from "./handlers/visualHandler.js"
 import { DatabaseMessageModel, DataHandlerMessageModel } from "./models.js"
-import { MAIN_HANDLERS, MESSAGE_TYPES,CALL_TYPES,FILE_TYPES,USER_HANDLES, FILE_INTERACTIONS, FRIEND_INTERACTIONS, APP_EVENTS } from "./core/Actions.js"
+import { MAIN_HANDLERS, MESSAGE_TYPES,CALL_TYPES,FILE_TYPES,USER_HANDLES, FILE_INTERACTIONS, FRIEND_INTERACTIONS, APP_EVENTS, MESSAGE_INTERACTIONS } from "./core/Actions.js"
 
 import { getContacts, getSelectedUsersID, println, query, readData } from "./utils.js"
 import { initMessageListener } from "./listeners/messageListener.js"
@@ -24,6 +24,8 @@ import { fileHandler } from "./handlers/fileHandler.js"
 import { apiHandler } from "./handlers/requestHandling.js"
 import { initFileListener } from "./listeners/fileListener.js"
 import { initDataListener } from "./listeners/dataListener.js"
+import { resolveContacts, setChatVisibility, setContacts } from "./core/store.js"
+import { initUIListener } from "./listeners/uiListener.js"
 
 const {from} = getSelectedUsersID()
 
@@ -33,7 +35,7 @@ initDataListener()
 initVisualListener()
 initCallListener()
 initFileListener()
-
+initUIListener()
 
 
 if(!from){
@@ -62,47 +64,47 @@ const clickHandler = new UIClickHandler()
 
 
 // Setting each handler one to another
-messageHandler.setChatHandler(chatHandler);
-messageHandler.setAPIHandler(apiHandler);
-messageHandler.setDataHandler(dataHandler)
-messageHandler.setVisualHandler(visualHandler)
-messageHandler.setWebSocketHandler(webSocket)
+// messageHandler.setChatHandler(chatHandler);
+// messageHandler.setAPIHandler(apiHandler);
+// messageHandler.setDataHandler(dataHandler)
+// messageHandler.setVisualHandler(visualHandler)
+// messageHandler.setWebSocketHandler(webSocket)
 
-visualHandler.setChatHandler(chatHandler)
-visualHandler.setNotificationHandler(notification)
-visualHandler.setDataHandler(dataHandler)
-visualHandler.setFileHandler(fileHandler)
+// visualHandler.setChatHandler(chatHandler)
+// visualHandler.setNotificationHandler(notification)
+// visualHandler.setDataHandler(dataHandler)
+// visualHandler.setFileHandler(fileHandler)
 
-chatHandler.setDataHandler(dataHandler)
-chatHandler.setVisualHandler(visualHandler)
-chatHandler.setWebSocketHandler(webSocket)
-
-
-dataHandler.setDateHandler(dateHandler)
-dataHandler.setAPIHAndler(apiHandler)
-dataHandler.setWebSocketHandler(webSocket)
-dataHandler.setVisualHandler(visualHandler)
-
-fileHandler.setAPIHandler(apiHandler)
-fileHandler.setDataHandler(dataHandler)
-fileHandler.setVisualHandler(visualHandler)
-fileHandler.setWebSocketHandler(webSocket)
+// chatHandler.setDataHandler(dataHandler)
+// chatHandler.setVisualHandler(visualHandler)
+// chatHandler.setWebSocketHandler(webSocket)
 
 
-clickHandler.setVisualHandler(visualHandler)
-clickHandler.setFileHandler(fileHandler)
-clickHandler.setCallHandler(callHandler)
+// dataHandler.setDateHandler(dateHandler)
+// dataHandler.setAPIHAndler(apiHandler)
+// dataHandler.setWebSocketHandler(webSocket)
+// dataHandler.setVisualHandler(visualHandler)
+
+// fileHandler.setAPIHandler(apiHandler)
+// fileHandler.setDataHandler(dataHandler)
+// fileHandler.setVisualHandler(visualHandler)
+// fileHandler.setWebSocketHandler(webSocket)
 
 
-callHandler.setWebSocketHandler(webSocket);
-callHandler.setVisualHandler(visualHandler)
-callHandler.setDataHandler(dataHandler)
+// clickHandler.setVisualHandler(visualHandler)
+// clickHandler.setFileHandler(fileHandler)
+// clickHandler.setCallHandler(callHandler)
 
 
-userConfigHandler.setWebSocketHandler(webSocket)
-userConfigHandler.setVisualHandler(visualHandler)
-userConfigHandler.setDataHandler(dataHandler)
-userConfigHandler.setDateHandler(dateHandler)
+// callHandler.setWebSocketHandler(webSocket);
+// callHandler.setVisualHandler(visualHandler)
+// callHandler.setDataHandler(dataHandler)
+
+
+// userConfigHandler.setWebSocketHandler(webSocket)
+// userConfigHandler.setVisualHandler(visualHandler)
+// userConfigHandler.setDataHandler(dataHandler)
+// userConfigHandler.setDateHandler(dateHandler)
 
 
 
@@ -117,42 +119,16 @@ keyboardHandler.setElement(query(CHAT_SEND_TEXT_INPUT_CLS_NAME))
 const contacts = dataHandler.contacts;
 visualHandler.contacts = contacts;
 
-webSocket.setMainHandler(MAIN_HANDLERS.MESSAGE,messageHandler)
-webSocket.setMainHandler(MAIN_HANDLERS.CALL,callHandler)
-webSocket.setMainHandler(MAIN_HANDLERS.USER_CONFIG,userConfigHandler)
-
-// SAVE NEW PROFILE
-const saveNewProfileAction = query(".save-new-profile-button")
-/**
- * Save the profile base on the input name and the phone number
- * Friends will be re render automatically
- * TODO - Instead of all friends add the new friend
- */
-function saveNewProfile(){
-    const nameInput = document.querySelector(".add-new-profile-name")
-    const phoneInput = document.querySelector(".add-new-profile-contact")
-    let profiles = dataHandler.contacts;
-    const newProfile = {name:nameInput.value,contact:phoneInput.value}
-    if(!profiles){
-        profiles = [newProfile]
-    }else{
-        profiles.push(newProfile)
-    }
-
-    localStorage.setItem('contacts',JSON.stringify(profiles))
-
-    visualHandler.renderFriends()
-}
-saveNewProfileAction.addEventListener('click',saveNewProfile);
-
-
+// webSocket.setMainHandler(MAIN_HANDLERS.MESSAGE,messageHandler)
+// webSocket.setMainHandler(MAIN_HANDLERS.CALL,callHandler)
+// webSocket.setMainHandler(MAIN_HANDLERS.USER_CONFIG,userConfigHandler)
 
 
 function selectClickedFriend(friendDetails){
     return () => {
 
         eventBus.emit(FRIEND_INTERACTIONS.FRIEND_SELECTED,friendDetails)
-
+        setChatVisibility(true)
         // Set the visual setup for the friend
         dataHandler.notifications[friendDetails.contact] = 0
 
@@ -179,64 +155,7 @@ function selectClickedFriend(friendDetails){
                     const msgObject = dataHandler.groupMessagesBaseOnDate(msgs)
                     visualHandler.addMessagesToTheView(msgObject)
                 })
-        }else{
-            
-            // Get the messages and reformat them into data handler messages
-            // const msgs = dataHandler.reformatMessages(currentMessages.map( (e) => {
-            //     const model = new DataHandlerMessageModel(e)
-            //     return model;
-            // } ))
-
-
-            // // Group the messages base on the dates
-            // const msgOBJ    = dataHandler.groupMessagesBaseOnDate(msgs)
-            // visualHandler.addMessagesToTheView(msgOBJ)
-
-            // Load the not loaded delivered messages
-        //     const lastMessage = msgs[msgs.length-1]
-        //     apiHandler.loadNotDeliveredMessages(friendDetails.contact,lastMessage.messageID).then(e => e.json()).then(e => {
-                
-
-        //         const mappedMessages = e.map(x => {
-        //            const m = new DataHandlerMessageModel(x)
-        //            const fromUser = x['sentbyid'] !== friendDetails['contact'];
-        //            m.fromUser = fromUser;
-        //            m.friend = friendDetails['contact']
-        //            return m;
-        //         })
-
-             
-
-        //         mappedMessages.forEach(e => {
-        //             dataHandler.addMessage(e);
-        //         })
-
-        //         const formattedMessages = dataHandler.formatLoadedMessages(mappedMessages)
-        //         visualHandler.updateLaterMessages(formattedMessages)
-
-        //         dataHandler.updateNotDeliveredMessages(friendDetails['contact'])
-        //         dataHandler.loadDeliveredAndSeenMessageTimesIf(friendDetails['contact']).then(e => {
-                 
-        //             for(let i = 0 ; i < e.length;i++){
-        //                 const msg = e[i]
-                        
-        //                 if(msg['userReceivedAt']){
-                            
-        //                     dataHandler.updateMessage(friendDetails['contact'],msg['messageID'],{userReceivedAt:msg['userReceivedAt']})
-        //                     visualHandler.setMessageDelivered(msg['messageID'])
-        //                 }
-
-        //                 if(msg['userRead']){
-        //                     dataHandler.updateMessage(friendDetails['contact'],msg['messageID'],{userRead:true,userReadMessageAt:msg['userReadMessageAt']});
-        //                     visualHandler.readMessage(msg['messageID'])
-        //                 }
-
-
-        //             }
-        //         })
-        // })
-    
-    }
+        }else{}
         
         chatHandler.currentMessageContacts[friendDetails.contact] = {}
         query(".main-container").setAttribute("showMessages","true")
@@ -328,12 +247,11 @@ document.querySelector(".chat-info").addEventListener('scroll',async (event) => 
     const ele = document.querySelector(".chat-info")
 
     if(ele.scrollTop === 0){
-        const messages = await dataHandler.loadPreviousMessages(10)
-        visualHandler.updatePreviousMessage(messages)
+        eventBus.emit(MESSAGE_INTERACTIONS.LOAD_PREVIOUS_MESSAGES)
     }
 
     if(ele.scrollTop + ele.clientHeight >= ele.scrollHeight ){
-        println("Scroll at the bottom")
+
     }
 
 })
@@ -347,7 +265,7 @@ document.querySelector(".chat-info").addEventListener('scroll',async (event) => 
 
 // renderSelectedFriendOnStartup();
 visualHandler.setOnFriendClicked(selectClickedFriend)
-visualHandler.renderFriends(selectClickedFriend)
+visualHandler.renderFriends()
 sendTextMessageAction();
 
 
@@ -426,6 +344,7 @@ visualHandler.setLeftSideAppTab("1")
 
 query(".go-back-to-friend-button").addEventListener('click',(event) => {
     query(".main-container").setAttribute('showMessages','false')
+    setChatVisibility(false)
 })
 
 
@@ -438,3 +357,9 @@ query(".go-back-to-friend-button").addEventListener('click',(event) => {
 //     const {to} = getSelectedUsersID()
 //     userConfigHandler.askIfFriendOnline(to)
 // },10000)
+
+const selectedFriend = readData('selectedContactInfo')
+console.log("Okay now setting the friend",selectedFriend)
+if(selectedFriend){
+    selectClickedFriend(selectedFriend)()
+}

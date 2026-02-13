@@ -2,7 +2,7 @@ import { getSelectedUsersID, query, readData } from "../utils.js";
 import { DataHandler } from "./dataHandler.js";
 import {WebSocketHandler } from "./requestHandling.js";
 import { VisualHandler } from "./visualHandler.js";
-import { MAIN_HANDLERS, MESSAGE_TYPES,CALL_TYPES,FILE_TYPES,USER_HANDLES } from "../core/Actions.js"
+import { MAIN_HANDLERS, MESSAGE_TYPES,CALL_TYPES,FILE_TYPES,USER_HANDLES, CALL_EVENTS } from "../core/Actions.js"
 import { eventBus } from "../core/EventBus.js";
 
 
@@ -86,14 +86,15 @@ export class CallHandler {
      * With the RTC Offer object
      * @param {MediaStream} stream
      */
-    async initCall(stream,onlyAudio=false){
+    async initCall(onlyAudio=false){
         const {from,to} = getSelectedUsersID();
         this.from = from;
         this.to = to;
         this.onlyAudio = onlyAudio;
+        const stream = await navigator.mediaDevices.getUserMedia({video:true})
+        this.localStream = stream;
 
         this.peerConnection = new RTCPeerConnection(CALL_CONFIGURATION)
-        
         this.sendIceCandidatesToOtherUser()
         this.connectTracks()
 
@@ -113,7 +114,7 @@ export class CallHandler {
             onlyAudio
         }
 
-        this.webSocketHandler.sendData(JSON.stringify(payload))
+        eventBus.emit(CALL_EVENTS.CALL_OFFER_CREATED,payload)
     }
     
     /**
@@ -203,7 +204,7 @@ export class CallHandler {
      */
     async answerEventByReceiver(){
         const stream = await navigator.mediaDevices.getUserMedia({video:true,audio:false})
-
+        this.localStream = stream;
         stream.getTracks().forEach((e) => {
             this.peerConnection.addTrack(e,stream)
         })
@@ -279,9 +280,35 @@ export class CallHandler {
      * Closed signal gonna send via the web socket for the other user
      * Visual handler has been set so this function will handle the closing dialog
      */
-    async closeCall(){
-        this.peerConnection.close()
-        eventBus.emit(CALL_TYPES.CALL_WAS_DISCONNECTED_BY_USER,{to:this.to})
+    async closeCall(emitEvent=true){
+        
+        this.localStream?.getTracks().forEach(e => {
+            e.stop()
+        })
+
+        this.peerConnection?.close()
+
+
+           // Reset state
+        this.peerConnection = null;
+        this.localStream = null;
+        this.iceCandidates = [];
+        this.okayToSetRemoteDescription = false;
+
+        if(emitEvent){
+            eventBus.emit(CALL_TYPES.CALL_WAS_DISCONNECTED_BY_USER,{to:this.to})
+        }
+        
+    }
+
+    /**
+     * 
+     * @param {MediaStream} payload 
+     */
+    async setLocalStream(stream){
+        stream.getTracks().forEach(e => {
+            this.peerConnection.addTrack(e,stream)
+        })
     }
 }
 

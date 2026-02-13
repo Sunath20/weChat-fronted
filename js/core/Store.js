@@ -41,6 +41,7 @@ class Store {
 
 export function reformatMessages(){
   const messages = readData('messages')
+  if(!messages)return;
   const contacts = Object.keys(messages)
   const newMessages = {}
 
@@ -96,7 +97,10 @@ export const store = new Store({
   currentRoomID:readData('currentRoomID') || null,
   callingContact:null,
   yetToUploadFiles:[],
-  notifications:{}
+  notifications:{},
+  callUserStream:null,
+  callRemoteStream:null,
+  chatVisible:false
 });
 
 
@@ -149,16 +153,15 @@ export function addMessages(payload){
       const messages = Array.isArray(payload) ? payload : [payload]
       const {currentUser} = store.getState()
 
-  const mappedMessages = tagBaseOnDate(messages.map(e => {
+      const mappedMessages = tagBaseOnDate(messages.map(e => {
     const msg = new DataHandlerMessageModel(e)
-    console.log(msg,e) 
     msg.fromUser = msg.sentById === currentUser.contact
     msg.friend = msg.fromUser ? e.to : e.from
 
     return msg;
 
-  }),false)
-  console.log("Setting on ",mappedMessages)
+      }),false)
+  
 
   store.setState((state) => {
     const messages = state.messages;
@@ -171,6 +174,7 @@ export function addMessages(payload){
         if(!dateMessages)dateMessages=[]
         dateMessages.push(e)
         userMessages[dateTag] = dateMessages
+
         state.messages[friend] = userMessages
     })
 
@@ -178,7 +182,7 @@ export function addMessages(payload){
   })
 
   saveData('messages',store.getState().messages)
-  console.log("returning ",mappedMessages)
+ 
   return mappedMessages
 
   }catch(error){
@@ -210,6 +214,66 @@ export function addNewMessageToStore(payload,friend=null){
 
   eventBus.emit(STORE_EVENTS.MESSAGE_ADDED,msg)
   saveData('messages',store.getState().messages)
+
+}
+
+export function addLoadedMessages(messages,messageWith){  
+  const currentUserID = resolveCurrentUser().contact
+  let returningMessages = {}
+
+  try{
+      
+    const mappedMessages = tagBaseOnDate(messages.map(e => {
+      const msg = new DataHandlerMessageModel(e)
+      msg.fromUser = msg.sentById === currentUserID
+      msg.friend = msg.fromUser ? e.to : e.from
+
+      return msg;
+
+  }),false);
+
+  store.setState((state) => {
+    let currentGoingDate = null;
+    let currentGoingMessages = []  
+
+    for(let i = 0 ; i < mappedMessages.length;i++){
+
+      if(!returningMessages[mappedMessages[i].dateTag]){
+        returningMessages[mappedMessages[i].dateTag] = []
+      }
+
+      returningMessages[mappedMessages[i].dateTag].push(mappedMessages[i])
+
+        if(!currentGoingDate){
+          currentGoingDate = mappedMessages[i].dateTag;
+          currentGoingMessages.push(mappedMessages[i]);
+        }else if (currentGoingDate === mappedMessages[i].dateTag){
+          currentGoingMessages.push(mappedMessages[i])
+        }else {
+          const latestMessages = state.messages[messageWith][currentGoingDate] || []
+          state.messages[messageWith][currentGoingDate] = [...currentGoingMessages,...latestMessages]
+          currentGoingDate = mappedMessages[i].dateTag
+          currentGoingMessages = [mappedMessages[i]]
+        }
+
+      
+    }
+
+    const latestMessages = state.messages[messageWith][currentGoingDate] || [];
+    state.messages[messageWith][currentGoingDate] = [...currentGoingMessages,...latestMessages]
+    return state;
+  })
+
+  saveData('messages',store.getState().messages)
+
+  eventBus.emit(STORE_EVENTS.LOADED_PREVIOUS_MESSAGES,{messageWith,messages:returningMessages})
+
+
+  }catch(error){
+    console.error(error)
+  }
+
+
 
 }
 
@@ -310,10 +374,13 @@ export function getUploadingFiles(){
 
 export function setSelectedFriend(friendDetails){
     store.setState( (state) => {
-        state['selectedUser'] == friendDetails;
+        state['selectedUser'] = friendDetails;
+
+        state.notifications[friendDetails.contact] = 0;
         return state;
     })
      localStorage.setItem('selectedContactInfo',JSON.stringify(friendDetails))
+     eventBus.emit(STORE_EVENTS.NOTIFICATION_COUNT_CHANGED,{friend:friendDetails.contact,count:0})
 }
 
 
@@ -360,4 +427,62 @@ export function resolveContacts(){
 
 export function resolveNotifications(){
   return store.getState().notifications
+}
+
+
+export function setCallStream(stream,localStream=true){
+  store.setState((state) => {
+      state[localStream ? 'callUserStream' : 'callRemoteStream'] = stream;
+      return state;
+  })
+  
+  eventBus.emit(STORE_EVENTS.CALL_LOCAL_STREAM_SET,stream)     
+}
+
+export function addNewNotification(payload){
+    const {friend} = payload;
+    let count = 0 ;
+    store.setState((state) => {
+      
+      const notifications = state.notifications;
+    
+      if(!notifications[friend]){
+        state.notifications[friend] = 0
+      }
+      state.notifications[friend] += 1;
+      count = state.notifications[friend]
+      return state;
+      })
+
+    eventBus.emit(STORE_EVENTS.NOTIFICATION_COUNT_CHANGED,{friend,count})
+}
+
+export function setChatVisibility(visible){
+    store.setState((state) => {
+        state['chatVisible'] = visible
+        return state;
+    })
+}
+
+export function resolveChatVisibility(){
+  return store.getState()['chatVisible']
+}
+
+
+
+export function setContacts(contacts){
+  store.setState((state) => {
+    state['contacts'] = contacts
+    return state;
+  })
+}
+
+export function addNewContact(contactDetails){
+  store.setState((state) => {
+      state['contacts'].push(contactDetails)
+      return state;
+  })
+
+  saveData('contacts',store.getState().contacts)
+  eventBus.emit(STORE_EVENTS.NEW_CONTACT_ADDED,contactDetails)
 }

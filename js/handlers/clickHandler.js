@@ -1,4 +1,4 @@
-import { CALL_TYPES, CLICK_EVENTS, FILE_INTERACTIONS } from "../core/Actions.js";
+import { APP_INTERACTIONS, CALL_INTERACTIONS, CALL_TYPES, CLICK_EVENTS, CONTACTS_INTERACTIONS, FILE_INTERACTIONS, UPLOAD_INTERACTIONS } from "../core/Actions.js";
 import { eventBus } from "../core/EventBus.js";
 import {query, readData} from "../utils.js"
 import { callHandler, CallHandler } from "./callHandler.js";
@@ -26,6 +26,9 @@ export class ClickHandler {
     }
 
 }
+
+
+const NEW_CONTACT_ADD_BTN_CLS_NAME = ".save-new-profile-button"
 
 
 const FILE_MENU_DIALOG_CLS_NAME = ".share-file-dialog"
@@ -121,6 +124,9 @@ export class UIClickHandler extends ClickHandler {
 
 
     initClickHandlers(){
+
+        this.setOnClick(query(NEW_CONTACT_ADD_BTN_CLS_NAME),this.saveNewProfile)
+
         this.setOnClick(query(FILE_MENU_DIALOG_CLS_NAME),this.onFileMenuClick)
         this.setOnClick(query(VIDEO_FILE_UPLOAD_ACTION_CLS_NAME),this.onVideoUploadDialogClick)
         this.setOnClick(query(MODAL_CLOSE_ACTION_CLS_NAME), this.onClosingFileUploadClick)
@@ -156,9 +162,10 @@ export class UIClickHandler extends ClickHandler {
     }
 
     onPictureUploadDialogClicked(event){
-        const inputElement = document.getElementById("FILES-SHARE_INPUT")
-        inputElement.accept = "image/*"
-        this.visualHandler.modalHandler.showModal(FILE_INPUT_MODAL_TAG)
+        // const inputElement = document.getElementById("FILES-SHARE_INPUT")
+        // inputElement.accept = "image/*"
+        eventBus.emit(UPLOAD_INTERACTIONS.SHOW_UPLOAD_MODAL,FILE_INPUT_MODAL_TAG)
+    // this.visualHandler.modalHandler.showModal(FILE_INPUT_MODAL_TAG)
     }
 
     onVideoUploadDialogClick(event){
@@ -169,20 +176,22 @@ export class UIClickHandler extends ClickHandler {
     }
 
     onPDFFileUploadDialogClick(event){
-         const inputElement = document.getElementById("FILES-SHARE_INPUT")
-        inputElement.accept = ".pdf"
-        this.visualHandler.modalHandler.showModal(FILE_INPUT_MODAL_TAG)
+        //  const inputElement = document.getElementById("FILES-SHARE_INPUT")
+        // inputElement.accept = ".pdf"
+        // this.visualHandler.modalHandler.showModal(FILE_INPUT_MODAL_TAG)
+         eventBus.emit(UPLOAD_INTERACTIONS.SHOW_UPLOAD_MODAL,FILE_INPUT_MODAL_TAG)
     }
 
     onClosingFileUploadClick(event){
-        event.preventDefault()
-        this.visualHandler.modalHandler.hideModal(FILE_INPUT_MODAL_TAG)
-        this.visualHandler.clearFileUploadPreview()
-        this.fileHandler.setYetToUploadFiles(null);
+        event.preventDefault();
+        eventBus.emit(UPLOAD_INTERACTIONS.CLOSE_UPLOAD_MODAL,FILE_INPUT_MODAL_TAG)
+        // this.visualHandler.modalHandler.hideModal(FILE_INPUT_MODAL_TAG)
+        // this.visualHandler.clearFileUploadPreview()
+        // this.fileHandler.setYetToUploadFiles(null);
     }
 
 
-    async onUploadAllFileClicked(event){
+async onUploadAllFileClicked(event){
         eventBus.emit(FILE_INTERACTIONS.FILES_UPLOAD,true);
         // const files = this.fileHandler.yetToUploadFiles
         // for(let i = 0 ; i < files.length;i++){
@@ -218,11 +227,7 @@ export class UIClickHandler extends ClickHandler {
      * Starts the audio call
      */
     async onAudioCallClicked(event){
-           const data = readData('selectedContactInfo')
-            data['state'] = "Calling..."
-            const stream = await navigator.mediaDevices.getUserMedia({audio:false,video:true})
-            await callHandler.initCall(stream,true)
-            visualHandler.initCallerDialogWithUserInfo(data);
+        eventBus.emit(CALL_INTERACTIONS.START_AUDIO_CALL,true)
     }
 
     /**
@@ -246,7 +251,7 @@ export class UIClickHandler extends ClickHandler {
      * @param {*} event 
      */
     async callCloseButtonClick(event){
-        await this.callHandler.closeCall()
+        eventBus.emit(CALL_INTERACTIONS.CANCEL_CALL)
     }
 
     /**
@@ -254,7 +259,7 @@ export class UIClickHandler extends ClickHandler {
      * @param {*} event 
      */
     async callCloseDialogAtEndOfTheCall(event){
-        await this.visualHandler.closeCallDialog()
+        eventBus.emit(CALL_INTERACTIONS.CLOSE_CALL_FINISHED_DIALOG,true)
     }
 
     /**
@@ -262,7 +267,7 @@ export class UIClickHandler extends ClickHandler {
      * @param {*} event 
      */
     async callCancelAudioOnlyClicked(event){
-        await this.callHandler.closeCall()
+        eventBus.emit(CALL_INTERACTIONS.CANCEL_AUDIO_ONLY_CALL)
     }
     
 
@@ -273,10 +278,16 @@ export class UIClickHandler extends ClickHandler {
 
     // left side of the app Settings
     closeSettingsTab(){
-        this.visualHandler.setLeftSideAppTab('1')
+        eventBus.emit(APP_INTERACTIONS.SETTINGS_CLOSE)
+        // this.visualHandler.setLeftSideAppTab('1')
     }
 
     openSettingsTab(){
-        this.visualHandler.setLeftSideAppTab('2')
+        eventBus.emit(APP_INTERACTIONS.SETTINGS_OPEN)
+        // this.visualHandler.setLeftSideAppTab('2')
+    }
+
+    saveNewProfile(event){
+        eventBus.emit(CONTACTS_INTERACTIONS.NEW_CONTACT_ADD,true)
     }
 }

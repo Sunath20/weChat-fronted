@@ -14,9 +14,10 @@ export class TabHandler {
      * @param {HTMLElement} element 
      */
     registerTab(name,element){
+        if(!element)return;
         this.tabs[name] = element;
         const children = element.querySelectorAll(".tab-child")
-
+        if(!children)return;
         for(const child of children.values()){
             
             const index = child.getAttribute("index")

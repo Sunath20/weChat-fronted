@@ -1,5 +1,5 @@
 import {eventBus} from "../core/EventBus.js"
-import {CALL_TYPES, FILE_EVENTS, FILE_TYPES, FRIEND_INTERACTIONS, MAIN_HANDLERS, MESSAGE_TYPES, STORE_EVENTS, VISUAL_EVENTS} from "../core/Actions.js"
+import {CALL_EVENTS, CALL_TYPES, FILE_EVENTS, FILE_TYPES, FRIEND_INTERACTIONS, MAIN_HANDLERS, MESSAGE_TYPES, STORE_EVENTS, VISUAL_EVENTS} from "../core/Actions.js"
 import {apiHandler, webSocketHandler} from "../handlers/requestHandling.js"
 import { getSelectedUsersID } from "../utils.js"
 import { DataHandlerMessageModel } from "../models.js"
@@ -11,7 +11,6 @@ export function initMessageListener(){
        const msg = addMessages(payload)
        eventBus.emit(STORE_EVENTS.MESSAGE_ADDED,msg[0])
 
-       console.log("Message Received from other user ",payload)
         webSocketHandler.sendDeliveredMessage(payload.from,payload['_id'],payload['createdat']);
     })
 
@@ -103,5 +102,14 @@ export function initMessageListener(){
         const {contact,messageID} = payload;
         apiHandler.loadNotDeliveredMessages(contact,messageID)
     })
+
+    eventBus.on(CALL_EVENTS.CALL_OFFER_CREATED,payload => {
+        webSocketHandler.sendData(JSON.stringify(payload))
+    })
+
+    eventBus.on(MESSAGE_TYPES.LOAD_PREVIOUS_MESSAGES,payload => {
+        const {lastMessage,currentUser,selectedUser} = payload
+        apiHandler.loadPreviousMessages(currentUser,selectedUser,lastMessage.createdAt)
+  })
 
 }

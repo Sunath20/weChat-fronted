@@ -16,7 +16,15 @@ export const MESSAGE_TYPES = {
     FILE_MESSAGE_SEND_TO_OTHER_USER: "FILE_MESSAGE_SENT",
     FILE_MESSAGE_RECEIVE_TO_OTHER_USER: "FILE_MESSAGE_RECEIVED",
     LOAD_NOT_DELIVERED_MESSAGES:"msg_load_not_delivered_messages",
-    LOADED_NOT_DELIVERED_MESSAGES:"msg_loaded_not_delivered_messages"
+    LOADED_NOT_DELIVERED_MESSAGES:"msg_loaded_not_delivered_messages",
+    LOAD_PREVIOUS_MESSAGES:"msg_load_previous_messages",
+    LOADED_PREVIOUS_MESSAGES:"msg_loaded_previous_messages"
+}
+
+
+
+export const MESSAGE_INTERACTIONS = {
+    LOAD_PREVIOUS_MESSAGES:"msg_int_load_previous_messages"
 }
 
 export const USER_HANDLES = {
@@ -41,6 +49,19 @@ export const CALL_TYPES = {
 
 }
 
+
+
+export const CALL_INTERACTIONS = {
+    START_AUDIO_CALL:"call_start_audio_call",
+    CLOSE_CALL_FINISHED_DIALOG:"call_interaction_close_call_finished_dialog",
+    CANCEL_AUDIO_ONLY_CALL:"call_int_cancel_audio_only_call",
+    CANCEL_CALL:"call_int_cancel"
+}
+
+export const CALL_EVENTS = {
+    CALL_OFFER_CREATED:"call_events_offer_created"  
+}
+
 export const MAIN_HANDLERS = {
     USER_CONFIG: "USER_CONFIG",
     FILE_SHARE: "FILE_SHARE",
@@ -53,7 +74,11 @@ export const STORE_EVENTS = {
     LOADED_MESSAGES_ADDED:"LOADED_MESSAGES_ADDED",
     CALLING_CONTACT_SET:"CALLING_CONTACT_SET",
     SELECTED_FRIEND_SET:"SELECTED_FRIEND_SET",
-    ADD_NOT_DELIVERED_MESSAGES:"ADD_NOT_DELIVERED_MESSAGES"
+    ADD_NOT_DELIVERED_MESSAGES:"ADD_NOT_DELIVERED_MESSAGES",
+    CALL_LOCAL_STREAM_SET:"store_call_local_stream_set",
+    NOTIFICATION_COUNT_CHANGED:"store_notification_count_changed",
+    NEW_CONTACT_ADDED:"store_new_contact_added",
+    LOADED_PREVIOUS_MESSAGES:"store_loaded_previous_messages"
 }
 
 export const VISUAL_EVENTS = {
@@ -66,7 +91,8 @@ export const CLICK_EVENTS = {
 }
 
 export const DATA_EVENTS = {
-    MESSAGES_ADD:"data_add_messages"
+    MESSAGES_ADD:"data_add_messages",
+    NEW_SELECTED_USER_SAVED_MESSAGES:"new selected user current messages"
 }
 
 
@@ -94,7 +120,10 @@ export const FILE_EVENTS = {
     FILE_UPLOAD_END:"file_upload_end",
     FILE_UPLOAD_BEGIN:"file_upload_begin",
     FILE_CHUNK_COMPLETED:"file_one_chunk_completed",
-    FILE_UPLOAD_ALL_FINISHED:"file_upload_all_finished"
+    FILE_UPLOAD_ALL_FINISHED:"file_upload_all_finished",
+    FILE_READ_LOCAL:"file_read_local_file",
+    FILE_READ_COMPLETE_LOCAL:"file_read_complete_local",
+    FILE_START_DOWNLOAD:"file_start_download"
 }
 
 export const FILE_INTERACTIONS = {
@@ -106,9 +135,22 @@ export const FILE_INTERACTIONS = {
 
 
 // Friends
+export const FRIEND_EVENTS = {
+    FILTERED_CONTACTS:"friends_event_filtered_contacts"
+}
 
 export const FRIEND_INTERACTIONS = {
-    FRIEND_SELECTED:"friend_selected_to_chat"
+    FRIEND_SELECTED:"friend_selected_to_chat",
+    NORMAL_FRIENDS_VIEW:"friend_set_normal_friends_view",
+    SEARCH_FRIENDS_VIEW:"friend_set_search_friends_view"
+}
+
+export const CONTACTS_INTERACTIONS = {
+    NEW_CONTACT_ADD:"contact_new_add"
+}
+
+export const CONTACTS_EVENTS = {
+    
 }
 
 
@@ -116,7 +158,28 @@ export const APP_EVENTS = {
   READY: "app_ready"
 }
 
+export const APP_INTERACTIONS = {
+    SETTINGS_CLOSE:"app_close_settings",
+    SETTINGS_OPEN:"app_open_settings",
+     
+}
+
+
+
+export const DOWNLOAD_EVENTS = {
+    START_DOWNLOAD:"download_start_new_download",
+    UPDATE_FILE_DOWNLOADED_TOTAL_CHUNK:"download_update_downloaded_total_chunks",
+    DOWNLOAD_FINISH:"download_file_finished"
+}
+
+
+export const UPLOAD_INTERACTIONS = {
+    SHOW_UPLOAD_MODAL:"upload_interactions_show_upload_modal",
+    CLOSE_UPLOAD_MODAL:"upload_interactions_close_upload_modal"
+}
+
 // Errors
 export const ERRORS = {
-    MESSAGE_LOADING_FAILED:"error_message_load_failed"
+    MESSAGE_LOADING_FAILED:"error_message_load_failed",
+    LOADING_PREVIOUS_MESSAGES_FAILED:"error_loading_previous_messages_failed"
 }

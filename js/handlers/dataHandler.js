@@ -1,10 +1,11 @@
 import { DatabaseMessageModel, DataHandlerMessageModel, FormattedDataHandlerMessageModel } from "../models.js"
-import { isEmptyObject, println, readData, saveData } from "../utils.js"
+import { isEmptyObject, println, readData, saveData, sortDateKeys } from "../utils.js"
 import { tagBaseOnDate } from "../utils/dateUtils.js";
 import { DateHandler } from "./dateHandler.js"
 import { APIHandler, WebSocketHandler } from "./requestHandling.js";
 import { VisualHandler } from "./visualHandler.js";
-
+import { apiHandler } from "./requestHandling.js";
+import { resolveContacts, resolveCurrentUser, resolveMessages, resolveSelectedUser } from "../core/store.js";
 
 
 /**
@@ -176,23 +177,16 @@ export class DataHandler {
      * Load the messages base on the last selected user and owner
      * @param {*} amount 
      */
-    async loadPreviousMessages(amount=10){
-        const getSelectedUser = readData('selectedContactInfo')
+    getLastMessage(){
+       
+        const getSelectedUser = resolveSelectedUser()
         const id = getSelectedUser.contact
 
-        const currentUser = readData('userDetails')
-        if(this.messages[id]){
-            const message =  this.messages[id][0]
-            const msgs = await this.apiHandler.loadPreviousMessages(
-                [id,currentUser.contact],
-                message.createdAt
-            ).then(e => e.json()).then(e => {
-                this.messages[id] = [...e.map(e => new DataHandlerMessageModel(e)),...this.messages[id]]
-                return this.formatLoadedMessages(e)
-            })
-            
-            return msgs;
-        }
+        const messages = resolveMessages(id)
+        const dateKeys = sortDateKeys(Object.keys(messages))
+        const lastDate = dateKeys[dateKeys.length - 1]
+        const dateMessages = messages[lastDate]
+        return dateMessages[0]
     }
 
     /**
@@ -308,4 +302,32 @@ export class DataHandler {
 
 
     }
+
+
+    filterContacts(query){
+        const contacts = resolveContacts()
+        
+        const exact = []
+        const startsWith = []
+        const includes = []
+        const filter = query.toLowerCase()
+        for(const contact of contacts){
+            const name  = contact.name.toLowerCase()
+            if(name === filter){
+                exact.push(contact)
+            }else if(name.startsWith(filter)){
+                startsWith.push(contact)
+            }else if(name.includes(filter)){
+                includes.push(contact)
+            }
+        }
+
+        
+        
+        return [...exact,...startsWith.sort(),...includes.sort()]
+
+    }
 }
+
+
+export const dataHandler = new DataHandler();

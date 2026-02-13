@@ -1,6 +1,6 @@
-import { CALL_TYPES, DATA_EVENTS, FILE_EVENTS, FILE_INTERACTIONS, FRIEND_INTERACTIONS, MESSAGE_TYPES, STORE_EVENTS, VISUAL_EVENTS } from "../core/Actions.js";
+import { APP_INTERACTIONS, CALL_INTERACTIONS, CALL_TYPES, DATA_EVENTS, DOWNLOAD_EVENTS, FILE_EVENTS, FILE_INTERACTIONS, FRIEND_EVENTS, FRIEND_INTERACTIONS, MESSAGE_TYPES, STORE_EVENTS, UPLOAD_INTERACTIONS, VISUAL_EVENTS } from "../core/Actions.js";
 import { eventBus } from "../core/EventBus.js";
-import { getCallingContact, resolveMessages, store, updateMessageInStore } from "../core/store.js";
+import { addNewNotification, getCallingContact, resolveChatVisibility, resolveContacts, resolveCurrentUser, resolveMessages, resolveSelectedUser, store, updateMessageInStore } from "../core/store.js";
 import { FILE_INPUT_MODAL_TAG } from "../handlers/clickHandler.js";
 import { visualHandler } from "../handlers/visualHandler.js";
 import { DataHandlerMessageModel } from "../models.js";
@@ -12,7 +12,14 @@ import { tagBaseOnDate } from "../utils/dateUtils.js";
 export function initVisualListener(){
     
     eventBus.on(STORE_EVENTS.MESSAGE_ADDED,message => {
-        visualHandler.addOneToday(message)
+        const user = resolveSelectedUser()
+        if(user.contact === message.friend && resolveChatVisibility()){
+            visualHandler.addOneToday(message)
+            visualHandler.scrollToBottom()
+        }else{
+            addNewNotification(message)
+        }
+
     })
 
 
@@ -77,13 +84,17 @@ export function initVisualListener(){
     // Friends 
     eventBus.on(STORE_EVENTS.SELECTED_FRIEND_SET,payload => {
         visualHandler.renderSelectedFriend(payload)
-        // const messages = resolveMessages(payload.contact)
-        // visualHandler.addMessagesToTheView(messages)
     })
 
     eventBus.on(DATA_EVENTS.MESSAGES_ADD,payload => {
-
         visualHandler.addMessagesToTheView(payload)
+        visualHandler.scrollToBottom()
+    })
+
+    eventBus.on(DATA_EVENTS.NEW_SELECTED_USER_SAVED_MESSAGES,payload => {
+        visualHandler.clearChat()
+        visualHandler.addMessagesToTheView(payload)
+        visualHandler.scrollToBottom()
     })
 
     eventBus.on(STORE_EVENTS.ADD_NOT_DELIVERED_MESSAGES,payload => {
@@ -91,17 +102,80 @@ export function initVisualListener(){
         const formattedMessages = formatSavedMessages(messages)
         visualHandler.addMessagesToTheView(formattedMessages)
     })
-
+ 
     eventBus.on(STORE_EVENTS.LOADED_MESSAGES_ADDED,payload => {
-        console.log("Updating the following messages ",payload)
         const msgOBJ = messageListToDateBase(payload)
-        console.log("Update object ",msgOBJ)
         visualHandler.updatePreviousMessage(msgOBJ,true)
     })
 
+    eventBus.on(CALL_INTERACTIONS.START_AUDIO_CALL,payload => {
+        const data = resolveCurrentUser()
+        data['state'] = "calling"
+        visualHandler.initCallerDialogWithUserInfo(data)
+    })
+
+    eventBus.on(CALL_INTERACTIONS.CLOSE_CALL_FINISHED_DIALOG,payload => {
+        visualHandler.closeCallDialog()
+    })
+
+    eventBus.on(STORE_EVENTS.NOTIFICATION_COUNT_CHANGED,({friend,count}) => {
+        visualHandler.showNewsMessageNotification(friend,count)
+    })
+
+    eventBus.on(STORE_EVENTS.NEW_CONTACT_ADDED,details => {
+        visualHandler.addNewContact(details)
+    })
+
+    eventBus.on(STORE_EVENTS.LOADED_PREVIOUS_MESSAGES,payload => {
+        const {messages,messageWith} = payload
+        const selectedUser = resolveSelectedUser().contact
+        if(messageWith === selectedUser && resolveChatVisibility()){
+            visualHandler.updatePreviousMessage(messages)
+        }
+    })
+
+    eventBus.on(APP_INTERACTIONS.SETTINGS_OPEN,payload =>{
+       visualHandler.setLeftSideAppTab('2')
+    })
+
+    eventBus.on(APP_INTERACTIONS.SETTINGS_CLOSE,payload => {
+        visualHandler.setLeftSideAppTab('1')
+    })
 
 
-    
+    eventBus.on(UPLOAD_INTERACTIONS.SHOW_UPLOAD_MODAL,modalTag => {
+        visualHandler.modalHandler.showModal(modalTag)
+    })
 
-    
+    eventBus.on(UPLOAD_INTERACTIONS.CLOSE_UPLOAD_MODAL,modalTag => {
+        visualHandler.modalHandler.hideModal(modalTag)
+        visualHandler.clearFileUploadPreview();
+    })    
+
+
+
+    eventBus.on(FRIEND_INTERACTIONS.NORMAL_FRIENDS_VIEW,payload => {
+        visualHandler.setFriendsDetailsTab('1')
+    })
+
+    eventBus.on(FRIEND_INTERACTIONS.SEARCH_FRIENDS_VIEW,payload => {
+        visualHandler.setFriendsDetailsTab('2')
+    })
+
+    eventBus.on(FRIEND_EVENTS.FILTERED_CONTACTS,contacts => {
+            visualHandler.renderFriends(contacts,".friends-search-result")
+    })
+
+
+    eventBus.on(FILE_EVENTS.FILE_READ_COMPLETE_LOCAL,({mimeType,messageID,fileName,file}) => {
+        visualHandler.addFilePreviewAfterLoading({messageID,file,fileName,mimeType})
+    })
+
+    eventBus.on(DOWNLOAD_EVENTS.UPDATE_FILE_DOWNLOADED_TOTAL_CHUNK,({fileID,downloadedChunks,fileName,messageID}) => {
+        console.log("File is downloading ",fileID,downloadedChunks,messageID,fileName)
+    })
+
+    eventBus.on(DOWNLOAD_EVENTS.DOWNLOAD_FINISH,({mimeType,messageID,fileName,file}) => {
+        visualHandler.addFilePreviewAfterLoading({messageID,file,fileName,mimeType,fromNetwork:true})
+    })
 }

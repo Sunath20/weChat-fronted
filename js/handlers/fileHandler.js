@@ -162,11 +162,11 @@ export class FileHandler {
          * @param {string} mimeType - type of the blob file
          * @returns 
          */
-      async retrieveFileFromServer(roomID,messageID,fileName,mimeType){
+      async retrieveFileFromServer(roomID,messageID,fileName,mimeType,downloadingCallback=(chunks)=>{},signal=null){
 
         
         const url = apiHandler.getServerBase() +  `/files/readFile/${roomID}/${messageID}-${fileName}`
-        const response = await fetch(url)
+        const response = await fetch(url,{signal})
         if(!response.ok)return;
         const reader = response.body.getReader()
 
@@ -181,6 +181,7 @@ export class FileHandler {
             }
             receiveLength += value.length;
             chunks.push(value);
+            downloadingCallback(chunks.length)
         }
 
         const fullData = new Uint8Array(receiveLength);
