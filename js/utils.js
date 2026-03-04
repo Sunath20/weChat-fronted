@@ -211,3 +211,9 @@ export function fileTypeToCategory(fileType){
 
 
 
+
+export async function sleep(seconds) {
+        return new Promise((resolve,reject) => {
+            setTimeout(() => {resolve("okay")},seconds*1000)
+        })
+}

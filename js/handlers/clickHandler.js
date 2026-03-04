@@ -1,4 +1,4 @@
-import { APP_INTERACTIONS, CALL_INTERACTIONS, CALL_TYPES, CLICK_EVENTS, CONTACTS_INTERACTIONS, FILE_INTERACTIONS, UPLOAD_INTERACTIONS } from "../core/Actions.js";
+import { APP_INTERACTIONS, CALL_INTERACTIONS, CALL_TYPES, CLICK_EVENTS, CONTACTS_INTERACTIONS, DOWNLOAD_INTERACTIONS, FILE_INTERACTIONS, UPLOAD_INTERACTIONS } from "../core/Actions.js";
 import { eventBus } from "../core/EventBus.js";
 import {query, readData} from "../utils.js"
 import { callHandler, CallHandler } from "./callHandler.js";
@@ -67,6 +67,11 @@ const CALL_ONLY_AUDIO_DISCONNECTED_BUTTON_CLS_NAME = ".end-only-audio-call-butto
 const SETTING_OPEN_BUTTON_CLS_NAME = ".open-setting-button"
 const SETTING_CLOSE_BUTTON_CLS_NAME = ".close-settings-tab"
 
+
+
+// Download Manager Styling
+const DOWNLOAD_MANAGER_MAXIMIZE_BTN = ".dm-btn.maximize"
+const DOWNLOAD_MANAGER_MINIMIZE_BTN  = ".dm-btn.minimize"
 
 
 export class UIClickHandler extends ClickHandler {
@@ -151,6 +156,12 @@ export class UIClickHandler extends ClickHandler {
         this.setOnClick(query(CALL_AUDIO_ONLY_FINISH_CLS_NAME),this.callCloseDialogAtEndOfTheCall)
         this.setOnClick(query(CALL_ONLY_AUDIO_DISCONNECTED_BUTTON_CLS_NAME),this.callCancelAudioOnlyClicked)
 
+
+        // Download Manager
+        // this.setOnClick(query(DOWNLOAD_MANAGER_CLOSE_BTN_CLS_NAME),this.closeDownloaderManagerPopUp)
+        // this.setOnClick(query(DOWNLOAD_MANAGER_MINIMIZE_BTN_CLS_NAME),this.toggleDownloaderDialogPopUp)
+        this.setOnClick(query(DOWNLOAD_MANAGER_MAXIMIZE_BTN),this.maximizeDownloadManager)
+        this.setOnClick(query(DOWNLOAD_MANAGER_MINIMIZE_BTN),this.minimizeDownloadManager)
 
         // Settings
         this.setOnClick(query(SETTING_CLOSE_BUTTON_CLS_NAME),this.closeSettingsTab)
@@ -290,4 +301,28 @@ async onUploadAllFileClicked(event){
     saveNewProfile(event){
         eventBus.emit(CONTACTS_INTERACTIONS.NEW_CONTACT_ADD,true)
     }
+
+
+
+    closeDownloaderManagerPopUp(event){
+        eventBus.emit(DOWNLOAD_INTERACTIONS.CLOSE_POPUP)
+    }
+
+    toggleDownloaderDialogPopUp(event){
+        eventBus.emit(DOWNLOAD_INTERACTIONS.TOGGLE_MINIMIZE_POP_UP)
+    }
+
+    maximizeDownloadManager(event){
+        console.log("Okay finnaly working")
+        eventBus.emit(DOWNLOAD_INTERACTIONS.SHOW_FULL_MANAGER)
+    }
+
+    minimizeDownloadManager(event){
+        eventBus.emit(DOWNLOAD_INTERACTIONS.MINIMIZE_DOWNLOAD_MANAGER)
+    }
+
+
 }
+
+
+export const clickHandler = new UIClickHandler()

@@ -98,13 +98,7 @@ body{
     background-color: var(--bg-secondary);
 }
 
-/* FRIENDS TOP CONTAINER */
-.friends {
-    display: flex;
-    flex-direction: column;
-    flex: 1;            /* take full remaining height under left-side-of-app */
-    overflow: hidden;   /* prevent double scrollbars */
-}
+
 
 /* SEARCH BAR + MENU */
 .search-bar {
@@ -164,87 +158,6 @@ body{
     color: var(--chat-date-color);
 }
 
-/* FRIENDS DETAILS TAB: container for friend list + search results */
-.friends-details-tab {
-    display: flex;
-    flex-direction: column;
-    flex: 1;          /* take remaining space below search bar */
-    overflow: hidden;
-}
-
-/* TAB CHILD: friend-list or search-result */
-.friends-details-tab > .tab-child {
-    display: flex;
-    flex-direction: column;
-    flex: 1;            /* fill remaining space */
-    overflow-y: auto;   /* scroll if content overflows */
-}
-
-/* FRIEND LIST */
-.friend-list {
-    flex: 1;             /* fill height */
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    padding: 8px 0;
-    overflow-y: auto;
-}
-
-/* INDIVIDUAL FRIEND */
-.friend {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 8px 12px;
-    cursor: pointer;
-    border-radius: 12px;
-    transition: background 0.2s;
-    position: relative;
-}
-
-.friend:hover {
-    background-color: #1F1F1F;
-}
-
-.friend > .photo {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    object-fit: cover;
-}
-
-.friend > .info {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 2px;
-}
-
-.friend > .info > .friend-name {
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--sent-text);
-}
-
-.friend > .info > .friend-status {
-    font-size: 12px;
-    color: var(--chat-date-color);
-    opacity: 0.8;
-}
-
-.friend-notification-counter {
-    font-size: 12px;
-    background-color: var(--primary);
-    color: var(--sent-text);
-    padding: 2px 6px;
-    border-radius: 12px;
-    margin-left: auto;
-    flex-shrink: 0;
-}
-
-.friend-notification-counter[notifications="0"] {
-    display: none;
-}
 
 /* .search-bar{
     height: 10%;
@@ -302,111 +215,6 @@ body{
 }
 
 
-.friends-details-tab {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    flex: 1;            /* take remaining space below search bar */
-    overflow: hidden;   /* prevent extra scroll conflicts */
-}
-
-
-.friend-list{
-    height: 90%;
-    width: 100%;
-    overflow-y: scroll;
-}
-
-
-
-/* .friend-list {
-    height: calc(100% - 70px); adjust if search bar + top container height changes
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    padding: 8px 0;
-}
- */
-
-/* .friend-list {
-    flex: 1;           fill all space under search bar / menu
-    overflow-y: auto;  allow scrolling if content is longer
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    padding: 8px 0;
-} */
-
-
-.friend-list {
-    flex: 1;           /* take all remaining space */
-    overflow-y: auto;  /* scroll if content overflows */
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    padding: 8px 0;
-}
-/* .friend {
-    height: 50px;
-    width: 100%;
-    background-color: rgba(250,250,250);
-    display: flex;
-    flex-direction: column;
-    margin-top: 10px;
-    margin-bottom: 10px;
-    justify-content: space-between;
-    
-} */
-
-
-.friend {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 8px 12px;
-    cursor: pointer;
-    border-radius: 12px;
-    transition: background 0.2s;
-    position: relative;
-}
-
-.friend:hover {
-    background-color: #1F1F1F; /* subtle hover effect */
-}
-
-
-
-.friend > .info {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 2px;
-}
-
-.friend > .info > .friend-name {
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--sent-text);
-}
-
-
-.friend > .info > .friend-status {
-    font-size: 12px;
-    color: var(--chat-date-color);
-    opacity: 0.8;
-}
-
-
-.friend-notification-counter {
-    font-size: 12px;
-    background-color: var(--primary);
-    color: var(--sent-text);
-    padding: 2px 6px;
-    border-radius: 12px;
-    margin-left: auto;
-    flex-shrink: 0;
-}
 
 /* CHAT STYLE */
 
@@ -1021,10 +829,6 @@ body{
         height: 100vh;
     }
 
-    .friends {
-        width: 100%;
-        height: 100vh;
-    }
 
     .chat >  .go-back {
         position: absolute;

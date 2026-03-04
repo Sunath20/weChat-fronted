@@ -10,7 +10,407 @@ dialog {
     list-style-type: none;
 }
 
+
+/* Global Dialog Reset - Apply Dark Theme to ALL Dialogs */
+dialog {
+    background-color: var(--bg-secondary) !important;
+    color: var(--sent-text) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 16px !important;
+}
+
+dialog::backdrop {
+    background-color: rgba(0, 0, 0, 0.75) !important;
+    backdrop-filter: blur(4px) !important;
+}
+
+
 dialog:focus {
     outline: none;
 }
 
+
+
+/* ===== UIKIT MODAL DARK THEME - GLOBAL OVERRIDE ===== */
+
+/* Modal Backdrop */
+.uk-modal {
+    background-color: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(4px);
+}
+
+/* Modal Dialog Container */
+.uk-modal-dialog {
+    background-color: var(--bg-secondary) !important;
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+    color: var(--sent-text);
+}
+
+/* Modal Body */
+.uk-modal-body {
+    background-color: var(--bg-secondary) !important;
+    color: var(--sent-text);
+    padding: 24px;
+}
+
+/* Modal Header/Title */
+.uk-modal-title {
+    color: var(--sent-text) !important;
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 12px;
+}
+
+/* Modal Close Button (X) */
+.uk-modal-close-default {
+    color: var(--chat-date-color) !important;
+    opacity: 0.6;
+    transition: all 0.2s;
+    background-color: transparent;
+}
+
+.uk-modal-close-default:hover {
+    color: var(--sent-text) !important;
+    opacity: 1;
+}
+
+.uk-modal-close-full {
+    background-color: var(--bg-main);
+    color: var(--sent-text);
+}
+
+/* ===== FORM ELEMENTS IN MODALS ===== */
+
+/* Form Labels */
+.uk-modal .uk-form-label {
+    color: var(--sent-text) !important;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 8px;
+    display: block;
+}
+
+/* Input Fields */
+.uk-modal .uk-input,
+.uk-modal .uk-textarea,
+.uk-modal .uk-select {
+    background-color: var(--input-bg) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 12px;
+    color: var(--input-text) !important;
+    padding: 12px 16px;
+    font-size: 15px;
+    transition: all 0.2s ease;
+    width: 100%;
+}
+
+/* Input Focus State */
+.uk-modal .uk-input:focus,
+.uk-modal .uk-textarea:focus,
+.uk-modal .uk-select:focus {
+    border-color: var(--primary) !important;
+    outline: none;
+    background-color: var(--bg-main) !important;
+    box-shadow: 0 0 0 3px rgba(30, 144, 255, 0.1);
+}
+
+/* Input Placeholder */
+.uk-modal .uk-input::placeholder,
+.uk-modal .uk-textarea::placeholder {
+    color: var(--chat-date-color) !important;
+    opacity: 0.6;
+}
+
+/* Form Stacked Container */
+.uk-modal .uk-form-stacked {
+    margin-bottom: 20px;
+}
+
+/* Form Margin */
+.uk-modal .uk-margin {
+    margin-bottom: 20px;
+}
+
+/* ===== MODAL BUTTONS ===== */
+
+/* Button Container (if you're using one) */
+.add-new-profile-actions,
+.modal-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 24px;
+}
+
+/* Danger/Cancel Button */
+.uk-modal .uk-button-danger {
+    background-color: transparent !important;
+    color: var(--received-text) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 10px;
+    padding: 11px 28px;
+    font-weight: 500;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.uk-modal .uk-button-danger:hover {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    border-color: #3C3C3C !important;
+    color: var(--sent-text) !important;
+}
+
+/* Primary/Save Button */
+.uk-modal .uk-button-primary {
+    background-color: var(--primary) !important;
+    color: var(--sent-text) !important;
+    border: none !important;
+    border-radius: 10px;
+    padding: 11px 28px;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.uk-modal .uk-button-primary:hover {
+    background-color: var(--primary-hover) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(30, 144, 255, 0.4);
+}
+
+.uk-modal .uk-button-primary:active {
+    transform: translateY(0);
+}
+
+/* Default Button */
+.uk-modal .uk-button-default {
+    background-color: var(--bg-main) !important;
+    color: var(--sent-text) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 10px;
+    padding: 11px 28px;
+    transition: all 0.2s ease;
+}
+
+.uk-modal .uk-button-default:hover {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    border-color: #3C3C3C !important;
+}
+
+/* ===== ADDITIONAL UIKIT OVERRIDES ===== */
+
+/* UIKit Form Controls */
+.uk-form-controls {
+    margin-top: 8px;
+}
+
+/* UIKit Checkbox/Radio in Modals */
+.uk-modal .uk-checkbox,
+.uk-modal .uk-radio {
+    background-color: var(--input-bg) !important;
+    border: 1px solid var(--border-color) !important;
+}
+
+.uk-modal .uk-checkbox:checked,
+.uk-modal .uk-radio:checked {
+    background-color: var(--primary) !important;
+    border-color: var(--primary) !important;
+}
+
+/* UIKit Legend (if using fieldsets) */
+.uk-modal .uk-legend {
+    color: var(--sent-text) !important;
+}
+
+/* ===== FILE INPUT STYLING ===== */
+.uk-modal input[type="file"] {
+    color: var(--sent-text);
+    background-color: var(--input-bg);
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.uk-modal input[type="file"]::file-selector-button {
+    background-color: var(--primary);
+    color: var(--sent-text);
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-right: 12px;
+    transition: all 0.2s;
+}
+
+.uk-modal input[type="file"]::file-selector-button:hover {
+    background-color: var(--primary-hover);
+}
+
+
+/* Add New Profile Modal - Final Polish */
+#add-new-profile .uk-modal-dialog {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 28px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+    max-width: 480px; /* slightly narrower for better proportions */
+}
+
+/* Add a subtle header/title style if needed */
+#add-new-profile h2, 
+#add-new-profile .modal-title {
+    color: var(--sent-text);
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 20px;
+}
+
+/* Form Labels */
+#add-new-profile .uk-form-label {
+    color: var(--sent-text);
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 8px;
+    display: block;
+}
+
+/* Input Fields with subtle focus animation */
+#add-new-profile .uk-input {
+    background-color: var(--input-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    color: var(--input-text);
+    padding: 12px 16px;
+    font-size: 15px;
+    transition: all 0.2s ease;
+    width: 100%;
+}
+
+#add-new-profile .uk-input:focus {
+    border-color: var(--primary);
+    outline: none;
+    background-color: var(--bg-main);
+    box-shadow: 0 0 0 3px rgba(30, 144, 255, 0.1); /* subtle glow */
+}
+
+#add-new-profile .uk-input::placeholder {
+    color: var(--chat-date-color);
+    opacity: 0.6;
+}
+
+/* Modal Actions Container */
+.add-new-profile-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 24px;
+}
+
+/* Exit Button - Refined */
+.add-new-profile-actions .uk-button-danger {
+    background-color: transparent;
+    color: var(--received-text);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 11px 28px;
+    font-weight: 500;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.add-new-profile-actions .uk-button-danger:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-color: #3C3C3C;
+    color: var(--sent-text);
+}
+
+/* Save Button - Primary Style with animation */
+.add-new-profile-actions .uk-button-primary {
+    background-color: var(--primary);
+    color: var(--sent-text);
+    border: none;
+    border-radius: 10px;
+    padding: 11px 28px;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.add-new-profile-actions .uk-button-primary:hover {
+    background-color: var(--primary-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(30, 144, 255, 0.4);
+}
+
+.add-new-profile-actions .uk-button-primary:active {
+    transform: translateY(0);
+}
+
+/* Modal Backdrop - darker */
+#add-new-profile.uk-modal {
+    background-color: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(2px); /* subtle blur effect if supported */
+}
+
+/* Spacing for form fields */
+#add-new-profile .uk-margin {
+    margin-bottom: 20px;
+}
+
+/* Optional: Add a close button (X) in top-right corner */
+#add-new-profile .uk-modal-close-default {
+    color: var(--chat-date-color);
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+#add-new-profile .uk-modal-close-default:hover {
+    color: var(--sent-text);
+    opacity: 1;
+}
+
+
+#add-new-profile .uk-modal-dialog {
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
+
+.add-new-profile-actions .uk-button-primary {
+    background-color: var(--sent-bg); /* #2ECC71 - your green */
+    color: var(--sent-text);
+}
+
+.add-new-profile-actions .uk-button-primary:hover {
+    background-color: #27AE60; /* darker green */
+    box-shadow: 0 4px 16px rgba(46, 204, 113, 0.4);
+}
+
+#add-new-profile .uk-input:invalid {
+    border-color: #E74C3C;
+}
+
+#add-new-profile .uk-input:valid {
+    border-color: var(--sent-bg);
+}

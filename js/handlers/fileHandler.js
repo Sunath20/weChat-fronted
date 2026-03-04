@@ -1,10 +1,11 @@
 import { DatabaseMessageModel } from "../models.js";
-import { getSelectedUsersID, indexDBRequestToFunction } from "../utils.js";
+import { getSelectedUsersID, indexDBRequestToFunction, readData, sleep } from "../utils.js";
 import { DataHandler } from "./dataHandler.js";
 import { apiHandler, APIHandler, WebSocketHandler } from "./requestHandling.js";
 import { VisualHandler } from "./visualHandler.js";
-import { MAIN_HANDLERS, MESSAGE_TYPES,CALL_TYPES,FILE_TYPES,USER_HANDLES } from "../core/Actions.js"
+import { MAIN_HANDLERS, MESSAGE_TYPES,CALL_TYPES,FILE_TYPES,USER_HANDLES, DOWNLOAD_EVENTS } from "../core/Actions.js"
 import { eventBus } from "../core/EventBus.js";
+import { getDownloadingInfo } from "../core/store.js";
 
 
 
@@ -12,7 +13,7 @@ export class FileHandler {
 
 
     constructor(){
-        
+        this.maximumFileSizeWithoutRequest = 1024 * 1024
     }
 
     /**
@@ -168,21 +169,38 @@ export class FileHandler {
         const url = apiHandler.getServerBase() +  `/files/readFile/${roomID}/${messageID}-${fileName}`
         const response = await fetch(url,{signal})
         if(!response.ok)return;
+
+        const fileSize = response.headers.get('Content-Length')
+        eventBus.emit(DOWNLOAD_EVENTS.INIT_FILE_SIZE,{messageID,fileSize})
+
         const reader = response.body.getReader()
 
         let receiveLength = 0
         let chunks = []
-        
-        while (true){
-            const {done,value} = await reader.read()
-            
-            if(done){
-                break;
+        let anyError = false;
+
+        try {
+                while (true){
+                const {done,value} = await reader.read()
+                
+                if(done){
+                    break;
+                }
+                receiveLength += value.length;
+                chunks.push(value);
+                downloadingCallback({downloaded:receiveLength,fileSize,downloadedChunks:chunks.length,chunk:value})
+                await sleep(1)
             }
-            receiveLength += value.length;
-            chunks.push(value);
-            downloadingCallback(chunks.length)
+        }catch(error){
+            
+            if(error.name === "AbortError"){
+
+            return null;
+            }
+
+            throw error;
         }
+        
 
         const fullData = new Uint8Array(receiveLength);
         let position = 0
@@ -197,13 +215,53 @@ export class FileHandler {
         return file;
     }
 
+    async retrieveFilePausedFromServer(roomID,messageID,fileName,downloadedSize,mimeType,downloadingCallback=(chunks)=>{},signal=null){
+        const url = apiHandler.getServerBase() +  `/files/readFileWithOffset/${roomID}/${messageID}-${fileName}`
+        const link = new URL(url);
+        link.searchParams.set('downloaded',downloadedSize);
+        const response = await fetch(link.toString(),{signal})
+        if(!response.ok)return;
+
+        const fileSize = response.headers.get('Content-Length')
+        eventBus.emit(DOWNLOAD_EVENTS.INIT_FILE_SIZE,{messageID,fileSize})
+
+        const reader = response.body.getReader()
+
+        let receiveLength = 0
+        let anyError = false;
+        let chunks = 0;
+
+        try {
+                while (true){
+                const {done,value} = await reader.read()
+                
+                if(done){
+                    break;
+                }
+                receiveLength += value.length;
+                chunks += 1;
+                downloadingCallback({downloaded:receiveLength,fileSize,downloadedChunks:chunks,chunk:value})
+                await sleep(1)
+            }
+        }catch(error){
+            
+            if(error.name === "AbortError"){
+                return null;
+            }
+            throw error;
+        }
+
+
+    }
+
 }
 
 
 const FILE_DATABASE_NAME = "FILES_MEDIA"
-const FILE_DATABASE_VERSION = 1
+const FILE_DATABASE_VERSION = 5
 const toPromise = indexDBRequestToFunction
 const FILE_INDEX_TAG = "files"
+const DOWNLOADING_FILES_INDEXES = "downloading_files"
 
 export class WebFileHandler extends FileHandler {
     
@@ -213,7 +271,8 @@ export class WebFileHandler extends FileHandler {
         this.dbOkay = false;
         this.fileStore = null;
         this.fileReadRequest  = []
-
+        this.tempFileRequests = []
+        this.maximumFileSizeWithoutRequest = 1024 * 1024
         this.readFile = this.readFile.bind(this)
 
     }
@@ -240,6 +299,12 @@ export class WebFileHandler extends FileHandler {
             const file = await this.readFile(fileRequest['filePath'])
             fileRequest['callback'](file)
         }
+
+         for(let i = 0 ; i < this.tempFileRequests.length;i++){
+            const fileRequest = this.tempFileRequests[i]
+            const file = await this.readFile(fileRequest['filePath'])
+            fileRequest['callback'](file)
+        }
         
     }
 
@@ -255,8 +320,17 @@ export class WebFileHandler extends FileHandler {
      * Mostly used for creating object stores
      */
     async defineStructure(){
-        const fileStoreRequest = this.db.createObjectStore(FILE_INDEX_TAG,{keyPath:"fileName"})
-        await toPromise(fileStoreRequest.transaction,true) 
+        if(!this.db.objectStoreNames.contains(FILE_INDEX_TAG)){
+            const fileStoreRequest = this.db.createObjectStore(FILE_INDEX_TAG,{keyPath:"fileName"})
+            await toPromise(fileStoreRequest.transaction,true) 
+        }
+
+        if(!this.db.objectStoreNames.contains(DOWNLOADING_FILES_INDEXES)){
+            const downloadFileStoreRequest = this.db.createObjectStore(DOWNLOADING_FILES_INDEXES,{keyPath:"messageID"})
+            await toPromise(downloadFileStoreRequest.transaction,true)
+        }
+        
+
     }
 
 
@@ -269,6 +343,15 @@ export class WebFileHandler extends FileHandler {
     // Get the file store instance
     getFileStore(){
             this.fileStore = this.db.transaction([FILE_INDEX_TAG],'readwrite').objectStore(FILE_INDEX_TAG)
+    }
+
+    getTempFilestore(){
+        this.tempStore = this.db.transaction([DOWNLOADING_FILES_INDEXES],'readwrite').objectStore(DOWNLOADING_FILES_INDEXES)
+    }
+
+    saveTempFile(payload){
+        this.getTempFilestore()
+        this.tempStore.add(payload)
     }
 
 
@@ -290,20 +373,104 @@ export class WebFileHandler extends FileHandler {
                     }
                     
                 }else{
-    
-                    this.fileReadRequest.push({filePath,callback:(event) => {
+                  this.fileReadRequest.push({filePath,callback:(event) => {
                         resolve(event)
                     }})
         }
         
     })
       
-
     }
 
 
-  
 
+       /**
+     * Read a file from the file store
+     * Path of the file must be given - {messageID}-{fileName}
+     * @param {string} filePath 
+     * @returns 
+     */
+    async readTempFile(filePath){
+        return new Promise( async (resolve,reject)  => {
+        if(this.dbOkay){
+                    this.getTempFilestore()
+                    try{
+                        const file = await toPromise(this.tempStore.get(filePath))
+                        resolve(file.target.result)
+                    }catch(error){
+                        resolve("No files")
+                    }
+                    
+                }else{
+                  this.tempFileRequests.push({filePath,callback:(event) => {
+                        resolve(event)
+                    }})
+        }
+        
+    })
+      
+    }
+
+
+    async retrieveFileFromServer(roomID,messageID,fileName,mimeType,downloadingCallback=(chunks)=>{},signal=null){
+
+        const callback = this.downloadingCallback(messageID,downloadingCallback).bind(this)
+        const response = await super.retrieveFileFromServer(roomID,messageID,fileName,mimeType,callback,signal)
+        return response;
+    }
+
+    async retrieveFilePausedFromServer(roomID,messageID,fileName,downloadedSize,mimeType,downloadingCallback=(chunks)=>{},signal=null){
+        const callback = this.downloadingCallback(messageID,downloadingCallback).bind(this);
+        console.log(fileName,"Why is this undefined ")
+        const response = await super.retrieveFilePausedFromServer(roomID,messageID,fileName,downloadedSize,mimeType,callback,signal=null)
+
+        try{
+            const file = await this.readTempFile(messageID)
+            // console.log(file,"This is the thing gonna convert")
+            const blob = new Blob(file.chunks,{type:mimeType});
+            eventBus.emit(DOWNLOAD_EVENTS.DOWNLOAD_FINISH,{mimeType,messageID,fileName,file:blob})
+        }catch(error){
+            console.error(error)
+        }
+        
+    }
+
+
+    downloadingCallback(messageID,callback){
+        return async ({downloaded,chunk,fileSize,downloadedChunks}) => {
+            this.getTempFilestore();
+            const result = await this.readTempFile(messageID);
+            
+            if(result){
+                const updatedObject = Object.assign(result,{downloaded,fileSize,downloadedChunks})
+                updatedObject['chunks'].push(chunk)
+                await this.tempStore.put(updatedObject);
+            }else{
+                await this.saveTempFile({
+                    messageID,
+                    downloaded,
+                    fileSize,
+                    downloadedChunks,
+                    chunks:[chunk]
+                })
+            }
+
+            callback({downloaded,chunk,fileSize,downloadedChunks})
+
+        }
+        
+    }
+
+
+
+    getFileInfoIfExist(roomID,messageID,fileName,mimeType){ 
+       return getDownloadingInfo(messageID)
+    }
+  
+    removeTempFile(messageID){
+        this.getTempFilestore();
+        this.tempStore.delete(messageID);
+    }
 
 }
 

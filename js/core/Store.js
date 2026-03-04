@@ -4,6 +4,7 @@ import { getSelectedUsersID, readData, saveData, sortDateKeys } from "../utils.j
 import { VISUAL_EVENTS } from "./Actions.js";
 import { eventBus } from "./EventBus.js";
 import { dateToEasyViewFormat, tagBaseOnDate, todayAsEasyViewFormat } from "../utils/dateUtils.js";
+import { DOWNLOADING_STATUS } from "./DownloadManager.js";
 
 class Store {
 
@@ -100,7 +101,8 @@ export const store = new Store({
   notifications:{},
   callUserStream:null,
   callRemoteStream:null,
-  chatVisible:false
+  chatVisible:false,
+  downloads:readData('downloads') || {}
 });
 
 
@@ -485,4 +487,62 @@ export function addNewContact(contactDetails){
 
   saveData('contacts',store.getState().contacts)
   eventBus.emit(STORE_EVENTS.NEW_CONTACT_ADDED,contactDetails)
+}
+
+
+export function addDownloadFile({roomID,messageID,fileName,mimeType}){
+    store.setState( (state) => {
+        state['downloads'][messageID] =  {roomID,messageID,fileName,mimeType,status:DOWNLOADING_STATUS.WAITING}
+        return state;
+    } )
+
+    saveData('downloads',store.getState().downloads)
+}
+
+export function updateDownloadFileInfo(payload){
+    store.setState( (state) => {
+              let message =  state['downloads'][payload.messageID] || {}
+              const payloadKeys = Object.keys(payload)
+              for(let i = 0 ; i < payloadKeys.length;i++){
+                message[payloadKeys[i]] = payload[payloadKeys[i]]
+              }
+              state['downloads'][payload.messageID]  = message
+              return state;
+    })
+
+    saveData('downloads',store.getState().downloads)
+}
+
+export function removeDownloadFileInfo({messageID}) {
+
+  store.setState( (state) => {
+      let messages = state['downloads'];
+      if(messages == null){return state;}
+      delete messages[messageID]
+      state['downloads'] = messages;
+      return state;
+  } )
+
+}
+export function setDownloadingStatus ({messageID,status}) {
+  
+    store.setState( (state) => {
+        const message = state['downloads'][messageID]
+        message['status'] = status;
+        state['downloads'][messageID]  = message;
+        return state;
+    })
+
+    saveData('downloads',store.getState().downloads);
+
+}
+
+export function getDownloadingInfo(messageID) {
+  const state = store.getState()
+  const downloadingFileMessages = state['downloads'] || {}
+  return downloadingFileMessages[messageID]
+}
+
+export function getDownloadingFilesMeta(){
+  return store.getState()['downloads'] || {}
 }

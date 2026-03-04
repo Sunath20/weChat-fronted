@@ -1,0 +1,289 @@
+/* Settings Panel - Dark Theme Redesign */
+.settings {
+    position: relative;
+    background-color: var(--bg-secondary);
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 24px;
+}
+
+/* Settings Header */
+.settings > h1 {
+    color: var(--sent-text);
+    font-size: 28px;
+    font-weight: 600;
+    margin-bottom: 32px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* Settings Parts Container */
+.settings-parts {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 8px 0;
+}
+
+/* Individual Setting Item */
+.setting-profile {
+    width: 100%;
+}
+
+/* Settings Buttons */
+.setting-profile > .uk-button {
+    width: 100%;
+    background-color: var(--bg-main);
+    color: var(--sent-text);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 16px 20px;
+    font-size: 15px;
+    font-weight: 500;
+    text-align: left;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* Add arrow icon to buttons */
+.setting-profile > .uk-button::after {
+    content: '›';
+    font-size: 24px;
+    color: var(--chat-date-color);
+    font-weight: 300;
+    transition: transform 0.2s ease;
+}
+
+.setting-profile > .uk-button:hover {
+    background-color: #1F1F1F;
+    border-color: #3C3C3C;
+    transform: translateX(4px);
+}
+
+.setting-profile > .uk-button:hover::after {
+    transform: translateX(4px);
+    color: var(--primary);
+}
+
+.setting-profile > .uk-button:active {
+    transform: translateX(2px);
+}
+
+/* Close Button Container */
+.settings > .cancel-button-container {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 10;
+}
+
+/* Close Button (X) */
+.settings .close-settings-tab {
+    background-color: transparent;
+    border: none;
+    color: var(--chat-date-color);
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    width: 40px;
+    height: 40px;
+}
+
+.settings .close-settings-tab:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--sent-text);
+    transform: rotate(90deg);
+}
+
+.settings .close-settings-tab .material-symbols-outlined {
+    font-size: 24px;
+}
+
+/* Optional: Add icons to setting items */
+.setting-profile > .uk-button[data-icon]::before {
+    margin-right: 12px;
+    font-size: 20px;
+    opacity: 0.7;
+}
+
+
+
+
+/* Settings Panel - Enhanced Version */
+.settings {
+    position: relative;
+    background-color: var(--bg-secondary);
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    overflow-y: auto;
+}
+
+/* Settings Header */
+.settings-header {
+    padding: 24px 24px 16px;
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--bg-main);
+    position: sticky;
+    top: 0;
+    z-index: 5;
+}
+
+.settings > h1 {
+    color: var(--sent-text);
+    font-size: 26px;
+    font-weight: 600;
+    margin: 0;
+}
+
+/* Settings Parts Container */
+.settings-parts {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 16px 0;
+    background-color: var(--bg-secondary);
+}
+
+/* Section Dividers (optional) */
+.settings-section {
+    padding: 8px 24px 4px;
+}
+
+.settings-section-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--chat-date-color);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+
+/* Individual Setting Item */
+.setting-profile {
+    width: 100%;
+    background-color: var(--bg-main);
+    border-top: 1px solid var(--border-color);
+}
+
+.setting-profile:last-child {
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* Settings Buttons - List Style */
+.setting-profile > .uk-button {
+    width: 100%;
+    background-color: transparent;
+    color: var(--sent-text);
+    border: none;
+    border-radius: 0;
+    padding: 18px 24px;
+    font-size: 15px;
+    font-weight: 500;
+    text-align: left;
+    transition: all 0.15s ease;
+    cursor: pointer;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* Icon before text (if you add icons) */
+.setting-profile > .uk-button .setting-icon {
+    width: 24px;
+    height: 24px;
+    margin-right: 16px;
+    opacity: 0.7;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Arrow indicator */
+.setting-profile > .uk-button::after {
+    content: '›';
+    font-size: 22px;
+    color: var(--chat-date-color);
+    font-weight: 300;
+    opacity: 0.5;
+    transition: all 0.2s ease;
+}
+
+.setting-profile > .uk-button:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.setting-profile > .uk-button:hover::after {
+    opacity: 1;
+    color: var(--primary);
+    transform: translateX(4px);
+}
+
+.setting-profile > .uk-button:active {
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Close Button Container */
+.settings > .cancel-button-container {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    z-index: 10;
+}
+
+/* Close Button (X) */
+.settings .close-settings-tab {
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    color: var(--chat-date-color);
+    cursor: pointer;
+    padding: 0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    width: 36px;
+    height: 36px;
+}
+
+.settings .close-settings-tab:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: var(--primary);
+    color: var(--sent-text);
+    transform: rotate(90deg);
+}
+
+.settings .close-settings-tab .material-symbols-outlined {
+    font-size: 20px;
+}
+
+/* Settings Scrollbar */
+.settings::-webkit-scrollbar {
+    width: 6px;
+    background-color: transparent;
+}
+
+.settings::-webkit-scrollbar-thumb {
+    background-color: #333333;
+    border-radius: 3px;
+}
+
+.settings::-webkit-scrollbar-thumb:hover {
+    background-color: #555555;
+}

@@ -5,11 +5,12 @@ import { DataHandler } from "./dataHandler.js";
 import { fileHandler, FileHandler } from "./fileHandler.js";
 import { Notification, setNotificationsToZero } from "./notification.js";
 import { TabHandler } from "./tabHandler.js";
-import { MAIN_HANDLERS, MESSAGE_TYPES,CALL_TYPES,FILE_TYPES,USER_HANDLES, VISUAL_EVENTS, FILE_EVENTS } from "../core/Actions.js"
+import { MAIN_HANDLERS, MESSAGE_TYPES,CALL_TYPES,FILE_TYPES,USER_HANDLES, VISUAL_EVENTS, FILE_EVENTS, REGISTER_EVENTS, CLICK_EVENTS, DOWNLOAD_INTERACTIONS } from "../core/Actions.js"
 import { getToday, tagBaseOnDate, todayAsEasyViewFormat } from "../utils/dateUtils.js";
-import { resolveContacts, resolveNotifications } from "../core/store.js";
+import { getDownloadingFilesMeta, getDownloadingInfo, resolveContacts, resolveNotifications } from "../core/store.js";
 import { apiHandler } from "./requestHandling.js";
 import { messageListToDateBase } from "../utils/dataFormatting.js";
+import { DOWNLOADING_STATUS } from "../core/DownloadManager.js";
 // import UIkit from "../lib/uikit.js"
 
 // Message List
@@ -42,6 +43,11 @@ const CALL_END_USERNAME_TEXT_CLS = ".call-ended-by-user"
 
 
 
+// DOWNLOADS
+const DOWNLOAD_CLOSE_POP_UP_BTN_CLS_NAME = ".download-manager-close"
+const DOWNLOAD_CONTAINER_CLS_NAME = ".download-manager"
+const DOWNLOAD_MANAGER_BODY_CLS_NAME = ".download-manager-body"
+
 // Dialog TAGS
 const MODAL_TAG_CALL_DIALOG = "call-dialog"
 
@@ -50,6 +56,15 @@ const MODAL_TAG_CALL_DIALOG = "call-dialog"
 const TAB_CALL_TAG = "call-tag"
 const TAB_LEFT_SIDE_APP_TAG = "left-side-app"
 const TAB_FRIENDS_DETAILS = "friends-details-tab"
+
+
+
+
+const DOWNLOAD_MANAGER_STATES = {
+    MINIMIZED:"minimized",
+    NORMAL:"normal",
+    MAXIMIZED:"maximized"
+}
 
 /**
  * Responsible for maintain render elements,delete and update elements
@@ -64,6 +79,7 @@ export class VisualHandler {
         this.contacts = contacts;
         this.modalHandler = new ModalHandler();
         this.tabHandler = new TabHandler()
+        this.downloadManagerState = DOWNLOAD_MANAGER_STATES.NORMAL;
         
         // Add the observer
         // Remove the observer as soon as it captures an event
@@ -200,6 +216,7 @@ export class VisualHandler {
                     roomID:payload.roomId,
                     messageID:payload.messageID,
                     fileName:fileOBJ['fileName'],
+                    fileSize:fileOBJ['fileSize'],
                     mimeType
         })
         
@@ -270,6 +287,30 @@ export class VisualHandler {
                
     }
 
+    addDownloadButtonForFile({roomID,messageID,fileName,mimeType}){
+        const message = query(`.message[messageid="${messageID}"]`)
+        const contentAfterName = message.querySelector('.message-content-if-after-name')
+        const downloadButton = document.createElement('button')
+        downloadButton.className = "uk-button uk-button-primary download-start-button"
+        downloadButton.innerText = "Download"
+
+
+        eventBus.emit(REGISTER_EVENTS.REGISTER_BUTTON_CLICK,{
+            element:downloadButton,
+            event:FILE_EVENTS.FILE_ACCEPTED_DOWNLOAD_REQUEST,
+            payload:{messageID,fileName,roomID,mimeType}
+        })
+
+        contentAfterName.append(downloadButton)
+    }
+
+    removeDownloadButtonForFile({mimeType,messageID,fileName,file}){
+        const message = query(`.message[messageid="${messageID}"]`)
+        const downloadButton = message.querySelector(".download-start-button")
+        if(downloadButton){
+            downloadButton.remove()
+        }
+    }
 
     previewOfTheMessageImage(fileBlob,messageID){
                 const messageElement = query(`.message[messageID="${messageID}"]`)
@@ -779,6 +820,135 @@ export class VisualHandler {
             element.scrollTop = element.scrollHeight;
         })
     }
+
+
+    setDownloadViewToFull(){
+   
+        const element = query(DOWNLOAD_CONTAINER_CLS_NAME)
+        if(this.downloadManagerState === DOWNLOAD_MANAGER_STATES.MINIMIZED){
+            element.classList.remove("minimize")
+            this.downloadManagerState = DOWNLOAD_MANAGER_STATES.NORMAL;
+        }else if(this.downloadManagerState === DOWNLOAD_MANAGER_STATES.NORMAL){
+            element.classList.add("maximize")
+            this.downloadManagerState = DOWNLOAD_MANAGER_STATES.MAXIMIZED;
+        }      
+       
+    }
+
+
+    minimizeDownloadView(){
+        const element = query(DOWNLOAD_CONTAINER_CLS_NAME)
+
+        if(this.downloadManagerState === DOWNLOAD_MANAGER_STATES.MAXIMIZED){
+            element.classList.remove("maximize")
+            this.downloadManagerState = DOWNLOAD_MANAGER_STATES.NORMAL;
+        }else{
+            this.downloadManagerState = DOWNLOAD_MANAGER_STATES.MINIMIZED;   
+            element.classList.add("minimize")
+        }
+
+
+    }
+
+    addNewFileToDownloadManager({roomID,messageID,fileName,mimeType}){
+        const newElement = document.createElement('div')
+        newElement.classList.add('download-item')
+        newElement.setAttribute('id',messageID);
+
+        const template = `
+
+
+            <div class="download-item-main-content">
+
+                    <div class="download-item-text">
+                <h6 >${fileName}<span class="file-meta">(2min)</span></h6>
+            </div>
+
+            <div class="dm-actions tab-container" >
+                    <!-- Start / Pause / Retry as tabs -->
+                    <div class="tab-child" index="1" >
+                        <button class="dm-btn start"><span class="material-symbols-outlined">play_arrow</span></button>
+                    </div>
+                    <div class="tab-child" index="2" style="display:none;">
+                        <button class="dm-btn pause"><span class="material-symbols-outlined">pause</span></button>
+                    </div>
+                    <div class="tab-child" index="3">
+                        <button class="dm-btn retry"><span class="material-symbols-outlined">autorenew</span></button>
+                    </div>
+
+                    <!-- Remove button separate -->
+                    <button class="dm-btn remove">
+                        <span class="material-symbols-outlined">delete</span>
+                    </button>
+            </div>
+
+        </div>
+
+            <div class="download-item-meta-data">
+                
+                <div class="progress-container">
+                        <div class="progress-bar" style="width: 20%"></div>
+                </div>
+
+            </div>
+        
+        
+        `
+
+        newElement.innerHTML = template;
+
+        const body = query(DOWNLOAD_MANAGER_BODY_CLS_NAME)
+        const child = body.children.length === 0 ? null : body.children[0]
+        body.insertBefore(newElement,child)
+        
+        this.updateDownloadItemActionButtonsOnState(messageID,DOWNLOADING_STATUS.WAITING)
+
+        eventBus.emit(REGISTER_EVENTS.REGISTER_BUTTON_CLICK,{
+            element:query(`.download-item[id="${messageID}"] > * button.pause`),
+            payload:{messageID,fileName},
+            event:DOWNLOAD_INTERACTIONS.PAUSE_DOWNLOAD_ITEM
+        })
+
+        eventBus.emit(REGISTER_EVENTS.REGISTER_BUTTON_CLICK,{
+            element:query(`.download-item[id="${messageID}"] > * button.start`),
+            payload:{messageID,fileName},
+            event:DOWNLOAD_INTERACTIONS.START_DOWNLOAD_FROM_PAUSED
+        })
+    }
+
+    updateDownloadingMetaInfo({fileID,downloadedChunks,downloaded,fileSize,messageID,fileName}){
+        const downloadItem = query(`.download-item[id="${messageID}"]`)
+        const progressBar = downloadItem.querySelector(".progress-bar")
+        const progress = Math.floor((downloaded / fileSize)*100);
+        progressBar.style.width = progress + "%";
+    }
+
+
+    updateDownloadItemActionButtonsOnState(messageID,state){
+
+        const downloadItem = query(`.download-item[id="${messageID}"]`)
+        if(!downloadItem){return;}
+        const downloadActions = downloadItem.querySelector(".dm-actions")
+
+        const startButton = downloadActions.querySelector(`.tab-child[index="1"]`)
+        const pauseButton = downloadActions.querySelector(`.tab-child[index="2"]`)
+        startButton.style.display = (state === DOWNLOADING_STATUS.WAITING || state === DOWNLOADING_STATUS.PAUSED) ? "flex" : "none";
+        pauseButton.style.display = (state === DOWNLOADING_STATUS.DOWNLOADING) ? "flex" : "none";
+    }
+
+    initPreviousDownloads(){
+        const downloads = getDownloadingFilesMeta()
+        const messageIDList = Object.keys(downloads)
+        for(let i = 0 ; i < messageIDList.length;i++){
+            const {fileName,fileSize,downloaded,messageID,mimeType,roomID,status} = downloads[messageIDList[i]];
+            if(status === DOWNLOADING_STATUS.PAUSED){
+                console.log("Adding the file name ",fileName,downloads[messageIDList[i]])
+                this.addNewFileToDownloadManager({roomID,messageID,fileName,mimeType})
+                this.updateDownloadingMetaInfo({messageID,downloaded,fileSize})
+            }
+        }
+    }
+
 }
 
 

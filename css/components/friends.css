@@ -1,0 +1,101 @@
+/* ---------------------- FRIENDS TOP CONTAINER ---------------------- */
+.friends {
+    display: flex;
+    flex-direction: column;
+    flex: 1;            /* take full remaining height under left-side-of-app */
+    overflow: hidden;   /* prevent double scrollbars */
+}
+
+/* ---------------------- FRIENDS DETAILS TAB ---------------------- */
+.friends-details-tab {
+    display: flex;
+    flex-direction: column;
+    flex: 1;            /* take remaining space below search bar */
+    overflow: hidden;   /* prevent extra scroll conflicts */
+}
+
+/* TAB CHILD: friend-list or search-result */
+.friends-details-tab > .tab-child {
+    display: flex;
+    flex-direction: column;
+    flex: 1;            /* fill remaining space */
+    overflow-y: auto;   /* scroll if content overflows */
+}
+
+/* ---------------------- FRIEND LIST ---------------------- */
+.friend-list {
+    flex: 1;                 /* fill height */
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 0;
+    overflow-y: auto;
+}
+
+/* ---------------------- INDIVIDUAL FRIEND ---------------------- */
+.friend {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    cursor: pointer;
+    border-radius: 12px;
+    transition: background 0.2s;
+    position: relative;
+}
+
+.friend:hover {
+    background-color: #1F1F1F; /* subtle hover effect */
+}
+
+.friend > .photo {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.friend > .info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+}
+
+.friend > .info > .friend-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--sent-text);
+}
+
+.friend > .info > .friend-status {
+    font-size: 12px;
+    color: var(--chat-date-color);
+    opacity: 0.8;
+}
+
+/* ---------------------- FRIEND NOTIFICATION COUNTER ---------------------- */
+.friend-notification-counter {
+    font-size: 12px;
+    background-color: var(--primary);
+    color: var(--sent-text);
+    padding: 2px 6px;
+    border-radius: 12px;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.friend-notification-counter[notifications="0"] {
+    display: none;
+}
+
+
+
+@media (max-width: 768px) {
+    
+    .friends {
+        width: 100%;
+        height: 90vh;
+    }
+    
+}

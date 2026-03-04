@@ -3,7 +3,7 @@
 import { eventBus } from "./core/EventBus.js"
 import { CallHandler } from "./handlers/callHandler.js"
 import { ChatHandler } from "./handlers/chatHandler.js"
-import { ClickHandler, UIClickHandler } from "./handlers/clickHandler.js"
+import { clickHandler, ClickHandler, UIClickHandler } from "./handlers/clickHandler.js"
 import { DataHandler } from "./handlers/dataHandler.js"
 import { DateHandler } from "./handlers/dateHandler.js"
 import { FileHandler, WebFileHandler } from "./handlers/fileHandler.js"
@@ -26,6 +26,7 @@ import { initFileListener } from "./listeners/fileListener.js"
 import { initDataListener } from "./listeners/dataListener.js"
 import { resolveContacts, setChatVisibility, setContacts } from "./core/store.js"
 import { initUIListener } from "./listeners/uiListener.js"
+import { initClickListener } from "./listeners/clickListener.js"
 
 const {from} = getSelectedUsersID()
 
@@ -36,7 +37,7 @@ initVisualListener()
 initCallListener()
 initFileListener()
 initUIListener()
-
+initClickListener()
 
 if(!from){
     window.location.href = "/login.html"
@@ -56,7 +57,7 @@ const keyboardHandler = new KeyBoardHandler()
 const dataHandler = new DataHandler()
 const dateHandler = new DateHandler()
 
-const clickHandler = new UIClickHandler()
+
 
 
 
@@ -363,3 +364,4 @@ console.log("Okay now setting the friend",selectedFriend)
 if(selectedFriend){
     selectClickedFriend(selectedFriend)()
 }
+visualHandler.initPreviousDownloads()

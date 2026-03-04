@@ -737,6 +737,7 @@ export class APIHandler {
     url.searchParams.set("fileName", file.name);
     url.searchParams.set("sentByID", from);
     url.searchParams.set("mimeType", file.type);
+    url.searchParams.set("fileSize",file.size);
 
     // 4. Create file message in backend
     const response = await fetch(url.toString(), { method: "GET" });

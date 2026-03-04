@@ -1,4 +1,5 @@
-import { APP_INTERACTIONS, CALL_INTERACTIONS, CALL_TYPES, DATA_EVENTS, DOWNLOAD_EVENTS, FILE_EVENTS, FILE_INTERACTIONS, FRIEND_EVENTS, FRIEND_INTERACTIONS, MESSAGE_TYPES, STORE_EVENTS, UPLOAD_INTERACTIONS, VISUAL_EVENTS } from "../core/Actions.js";
+import { APP_INTERACTIONS, CALL_INTERACTIONS, CALL_TYPES, DATA_EVENTS, DOWNLOAD_EVENTS, DOWNLOAD_INTERACTIONS, FILE_EVENTS, FILE_INTERACTIONS, FRIEND_EVENTS, FRIEND_INTERACTIONS, MESSAGE_TYPES, STORE_EVENTS, UPLOAD_INTERACTIONS, VISUAL_EVENTS } from "../core/Actions.js";
+import { DOWNLOADING_STATUS } from "../core/DownloadManager.js";
 import { eventBus } from "../core/EventBus.js";
 import { addNewNotification, getCallingContact, resolveChatVisibility, resolveContacts, resolveCurrentUser, resolveMessages, resolveSelectedUser, store, updateMessageInStore } from "../core/store.js";
 import { FILE_INPUT_MODAL_TAG } from "../handlers/clickHandler.js";
@@ -168,14 +169,56 @@ export function initVisualListener(){
 
 
     eventBus.on(FILE_EVENTS.FILE_READ_COMPLETE_LOCAL,({mimeType,messageID,fileName,file}) => {
+        // console.log(fileName,mimeType,messageID," this file is inside the data base")
         visualHandler.addFilePreviewAfterLoading({messageID,file,fileName,mimeType})
     })
 
-    eventBus.on(DOWNLOAD_EVENTS.UPDATE_FILE_DOWNLOADED_TOTAL_CHUNK,({fileID,downloadedChunks,fileName,messageID}) => {
-        console.log("File is downloading ",fileID,downloadedChunks,messageID,fileName)
+    eventBus.on(FILE_EVENTS.FILE_ACCEPT_DOWNLOAD_REQUEST,({roomID,messageID,fileName,mimeType}) => {
+        visualHandler.addDownloadButtonForFile({roomID,messageID,fileName,mimeType})
+    })
+
+
+    eventBus.on(DOWNLOAD_EVENTS.ADDED_TO_QUEUE,({roomID,messageID,fileName,mimeType}) => {
+        visualHandler.addNewFileToDownloadManager({roomID,messageID,fileName,mimeType})
+    })
+
+    eventBus.on(DOWNLOAD_EVENTS.START_DOWNLOAD,({roomID,messageID,fileName,mimeType}) => {
+            visualHandler.updateDownloadItemActionButtonsOnState(messageID,DOWNLOADING_STATUS.DOWNLOADING)
     })
 
     eventBus.on(DOWNLOAD_EVENTS.DOWNLOAD_FINISH,({mimeType,messageID,fileName,file}) => {
         visualHandler.addFilePreviewAfterLoading({messageID,file,fileName,mimeType,fromNetwork:true})
+        visualHandler.removeDownloadButtonForFile({mimeType,messageID,fileName,file})
+        visualHandler.updateDownloadItemActionButtonsOnState(messageID,DOWNLOADING_STATUS.FINISHED)
     })
+
+    eventBus.on(DOWNLOAD_EVENTS.UPDATE_FILE_DOWNLOADED_TOTAL_CHUNK,({fileID,downloadedChunks,downloaded,fileSize,messageID,fileName}) => {
+         console.log("File is downloading ",fileID,downloaded,fileSize,messageID,fileName,downloadedChunks)
+        visualHandler.updateDownloadingMetaInfo({fileID,downloaded,fileSize,messageID,downloadedChunks,fileName})
+        visualHandler.updateDownloadItemActionButtonsOnState(messageID,DOWNLOADING_STATUS.DOWNLOADING)
+    })
+
+    
+
+
+
+    // DOWNLOAD - INTERACTIONS
+    eventBus.on(DOWNLOAD_INTERACTIONS.SHOW_FULL_MANAGER,payload => {
+        visualHandler.setDownloadViewToFull()
+    })
+
+    eventBus.on(DOWNLOAD_INTERACTIONS.MINIMIZE_DOWNLOAD_MANAGER,payload => {
+        visualHandler.minimizeDownloadView()
+    })
+
+    eventBus.on(DOWNLOAD_INTERACTIONS.PAUSE_DOWNLOAD_ITEM,({messageID}) => {
+        visualHandler.updateDownloadItemActionButtonsOnState(messageID,DOWNLOADING_STATUS.PAUSED)
+    })
+
+    eventBus.on(DOWNLOAD_INTERACTIONS.START_DOWNLOAD_FROM_PAUSED,({messageID}) => {
+        visualHandler.updateDownloadItemActionButtonsOnState(messageID,DOWNLOADING_STATUS.DOWNLOADING)
+    })
+
+    
+    
 }

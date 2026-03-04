@@ -1,0 +1,197 @@
+/* Download Manager Card Header */
+.download-manager {
+    width: 100%;
+    background-color: var(--bg-secondary); /* card-like background */
+    border-radius: 12px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    overflow: hidden;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+.download-manager.maximize {
+    position: absolute;
+    width: 50%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%,-50%);
+    z-index: 1000;
+}
+
+.download-manager.minimize > .download-manager-body  {
+    display: none;
+}
+
+/* HEADER */
+.download-manager .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px;
+    background-color: var(--bg-main);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.download-manager .header-text h5 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--sent-text);
+}
+
+.download-manager .header-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.dm-btn {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+    color: var(--sent-text);
+}
+
+.dm-btn:hover {
+    background-color: var(--border-color);
+}
+
+.dm-btn .material-symbols-outlined {
+    font-size: 20px;
+}
+
+.download-manager .header-text h5 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--primary); /* make the text accent color */
+    text-shadow: 0 1px 2px rgba(0,0,0,0.4); /* subtle depth */
+}
+
+
+/* BODY */
+
+.download-item{
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.download-item-main-content{
+    display: flex;
+    justify-content: space-between;
+}
+
+
+
+.dm-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px; /* small spacing */
+    /* width: 100%; */
+}
+
+.dm-actions .tab-child {
+    flex: 1; /* evenly distribute Start / Pause / Retry */
+    display: flex;
+    justify-content: center;
+}
+
+.dm-btn {
+    background-color: var(--bg-secondary);
+    border: none;
+    border-radius: 6px;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.dm-btn:hover {
+    background-color: var(--primary-hover);
+}
+
+.dm-btn span {
+    font-size: 16px; /* compact icon */
+    color: var(--sent-text);
+}
+
+
+.download-item-text {
+    width: 70%;
+    margin-left: 20px;
+    overflow-x: scroll;
+    overflow-y: hidden;
+}
+
+
+
+/* Chat Scrollbar Styling */
+.download-item-text::-webkit-scrollbar {
+    width: 8px;                /* width of the scrollbar */
+    background-color: #1C1C1C; /* track background */
+    border-radius: 4px;
+}
+
+.download-item-text::-webkit-scrollbar-thumb {
+    background-color: #333333; /* the draggable part */
+    border-radius: 4px;
+    border: 2px solid #1C1C1C; /* optional: adds padding effect */
+}
+
+.download-item-text::-webkit-scrollbar-thumb:hover {
+    background-color: #555555; /* darker on hover for visibility */
+}
+
+.download-item-text::-webkit-scrollbar-track {
+    background-color: #1C1C1C; /* matches the chat bg */
+    border-radius: 4px;
+}
+
+
+.download-item-text h6 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--sent-text);
+    margin-right: 5px;
+    /* display: flex; */
+    /* justify-content: space-between; optional if you want time on far right */
+    /* align-items: center; */
+}
+
+.download-item-text .file-meta {
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--chat-date-color);
+    opacity: 0.8;
+    margin-left: 6px; /* spacing from filename */
+}
+
+
+
+/* Meta data */
+.progress-container {
+    width: 90%;
+    margin-left: auto;
+    margin-right: auto;
+    height: 6px; /* thin progress bar */
+    background-color: #2C2C2C; /* background track */
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--primary), var(--primary-hover));
+    border-radius: 3px;
+    transition: width 0.2s ease-in-out;
+}
+
+

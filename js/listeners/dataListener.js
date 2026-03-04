@@ -1,6 +1,7 @@
-import { CALL_INTERACTIONS, CONTACTS_INTERACTIONS, DATA_EVENTS, FRIEND_EVENTS, FRIEND_INTERACTIONS, MESSAGE_INTERACTIONS, MESSAGE_TYPES, STORE_EVENTS } from "../core/Actions.js";
+import { CALL_INTERACTIONS, CONTACTS_INTERACTIONS, DATA_EVENTS, DOWNLOAD_EVENTS, DOWNLOAD_INTERACTIONS, FRIEND_EVENTS, FRIEND_INTERACTIONS, MESSAGE_INTERACTIONS, MESSAGE_TYPES, STORE_EVENTS } from "../core/Actions.js";
+import { DOWNLOADING_STATUS } from "../core/DownloadManager.js";
 import { eventBus } from "../core/EventBus.js";
-import { addLoadedMessages, addLoadedMessagesToStore, addMessages, addNewContact, addNewMessageToStore, resolveCurrentUser, resolveMessages, resolveSelectedUser, setSelectedFriend, store } from "../core/store.js";
+import { addDownloadFile, addLoadedMessages, addLoadedMessagesToStore, addMessages, addNewContact, addNewMessageToStore, getDownloadingInfo, removeDownloadFileInfo, resolveCurrentUser, resolveMessages, resolveSelectedUser, setSelectedFriend, store, updateDownloadFileInfo } from "../core/store.js";
 import { dataHandler } from "../handlers/dataHandler.js";
 import { apiHandler } from "../handlers/requestHandling.js";
 import { DataHandlerMessageModel } from "../models.js";
@@ -67,6 +68,32 @@ export function initDataListener(){
         eventBus.emit(FRIEND_EVENTS.FILTERED_CONTACTS,contacts)
     })
 
+
+    eventBus.on(DOWNLOAD_EVENTS.ADDED_TO_QUEUE,({roomID,messageID,fileName,mimeType}) => {
+        addDownloadFile({roomID,messageID,fileName,mimeType});
+    })
+
+    eventBus.on(DOWNLOAD_EVENTS.INIT_FILE_SIZE,({messageID,fileSize}) => {
+        updateDownloadFileInfo({messageID,fileSize});
+    })
+
+    eventBus.on(DOWNLOAD_EVENTS.START_DOWNLOAD,({roomID,messageID,fileName,mimeType}) => {
+        updateDownloadFileInfo({messageID,status:DOWNLOADING_STATUS.DOWNLOADING})
+    })
+
+    eventBus.on(DOWNLOAD_EVENTS.UPDATE_FILE_DOWNLOADED_TOTAL_CHUNK,({fileID,downloaded,fileSize,messageID,fileName}) => {
+        updateDownloadFileInfo({messageID,downloaded})
+    })
+
+    
+    eventBus.on(DOWNLOAD_EVENTS.DOWNLOAD_FINISH,({fileID,messageID,fileName,file,mimeType}) => {
+        updateDownloadFileInfo({messageID,status:DOWNLOADING_STATUS.FINISHED})
+        removeDownloadFileInfo({messageID});
+    })
+
+    eventBus.on(DOWNLOAD_INTERACTIONS.PAUSE_DOWNLOAD_ITEM,({messageID,fileName}) => {
+        updateDownloadFileInfo({messageID,status:DOWNLOADING_STATUS.PAUSED})
+    })
 
 
   

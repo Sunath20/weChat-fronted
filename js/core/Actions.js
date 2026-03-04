@@ -123,7 +123,11 @@ export const FILE_EVENTS = {
     FILE_UPLOAD_ALL_FINISHED:"file_upload_all_finished",
     FILE_READ_LOCAL:"file_read_local_file",
     FILE_READ_COMPLETE_LOCAL:"file_read_complete_local",
-    FILE_START_DOWNLOAD:"file_start_download"
+    FILE_START_DOWNLOAD:"file_start_download",
+    FILE_ACCEPT_DOWNLOAD_REQUEST:"file:event:accept:download-request",
+    FILE_ACCEPTED_DOWNLOAD_REQUEST:"file:event:accepted:download-request",
+    FILE_READ_TEMP:"file:event:read-temp-file",
+    FILE_READ_TEMP_FINISHED:"file:event:read-temp-file-completed"
 }
 
 export const FILE_INTERACTIONS = {
@@ -164,22 +168,44 @@ export const APP_INTERACTIONS = {
      
 }
 
+export const REGISTER_EVENTS = {
+    REGISTER_BUTTON_CLICK:"reg:btn:click:event"
+}
 
 
 export const DOWNLOAD_EVENTS = {
     START_DOWNLOAD:"download_start_new_download",
     UPDATE_FILE_DOWNLOADED_TOTAL_CHUNK:"download_update_downloaded_total_chunks",
-    DOWNLOAD_FINISH:"download_file_finished"
+    DOWNLOAD_FINISH:"download_file_finished",
+    INIT_FILE_SIZE:"download:event:init:file-size",
+    ADDED_TO_QUEUE:"download:event:added-to-queue",
+    LOAD_PAUSED_DOWNLOADS:"download:event:load-downloading-items"
 }
 
+
+export const DOWNLOAD_INTERACTIONS = {
+    CLOSE_POPUP:"download:interactions:close-pop-up",
+    TOGGLE_MINIMIZE_POP_UP:"download:interactions:toggle:minimize:pop-up",
+    SHOW_FULL_MANAGER:"download:interactions:show:full-manager",
+    MINIMIZE_DOWNLOAD_MANAGER:"download:interactions:minimized:manager",
+    PAUSE_DOWNLOAD_ITEM:"download:interactions:paused:download-item",
+    START_DOWNLOAD_FROM_PAUSED:"download:interactions:start:from-paused"
+}
 
 export const UPLOAD_INTERACTIONS = {
     SHOW_UPLOAD_MODAL:"upload_interactions_show_upload_modal",
     CLOSE_UPLOAD_MODAL:"upload_interactions_close_upload_modal"
 }
 
+
+export const REQUEST_APP_DATA = {
+    'TEMP_FILE_INFO':"request:file:temp-file-info",
+    'TEMP_FILE_INFO_RESPONSE':"request:file:temp-file-info-response"
+}
+
 // Errors
 export const ERRORS = {
     MESSAGE_LOADING_FAILED:"error_message_load_failed",
-    LOADING_PREVIOUS_MESSAGES_FAILED:"error_loading_previous_messages_failed"
+    LOADING_PREVIOUS_MESSAGES_FAILED:"error_loading_previous_messages_failed",
+    TEMP_FILE_INFO_READ_FAILED:"temp:file:info:read:failed"
 }

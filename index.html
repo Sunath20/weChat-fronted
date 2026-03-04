@@ -7,9 +7,15 @@
     <link rel="stylesheet" href="./css/components/modal.css">
     <link rel="stylesheet" href="./css/components/notification.css">
     <link rel="stylesheet" href="./css/components/call-dialog.css">
+    <link rel="stylesheet" href="./css/components/settings.css">
+    <link rel="stylesheet" href="./css/components/downloadManager.css">
     <link rel="stylesheet" href="./css/style.css">
+    <link rel="stylesheet" href="./css/components/friends.css">
     <link rel="stylesheet" href="./css/lib/uikit.min.css">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=close" />
+    <!-- <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=minimize" /> -->
+    <!-- <link rel="stylesheet" href="https://fonts.googleapis.cosm/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=close" /> -->
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+
     <!-- <link rel="stylesheet" href="./css/"> -->
     
 
@@ -19,8 +25,11 @@
     <div class="main-container">
         
         <div class="left-side-of-app tab-container">
-           
-            <div class="friends tab-child left-side-app-tab" index="1">
+
+            
+    <div class="tab-child" index="1">
+            
+        <div class="friends">
                             
                             <div class="search-bar">
                                 
@@ -58,33 +67,421 @@
             </div>
 
 
-            <div class="settings tab-child" index="2">
-                
-                <h1 class=".uk-heading-small">Settings</h1>
-                
-                <div class="settings-parts full-width">
-                   
-                    <div class="setting-profile full-width">
-                        <button class="uk-button full-width">Update Your Profile</button>
+                <!-- Download List -->
+            <div class="download-manager">
+                        
+                    <div class="header">
+                        <div class="header-text">
+                            <h5>Download Manager <span>2/10</span></h5>
+                        </div>
+                        <div class="header-actions">
+                            
+                            <button class="dm-btn minimize">
+                               <span class="material-symbols-outlined">minimize</span>
+                            </button>
+
+                              <button class="dm-btn maximize" title="Maximize">
+                                <span class="material-symbols-outlined">fullscreen</span>
+                              </button>
+
+                            <button class="dm-btn close">
+                                <span class="material-symbols-outlined">close</span>
+                            </button>
+
+                        </div>
                     </div>
-                    
-                    <div class="setting-profile full-width">
-                        <button class="uk-button full-width">Contact List</button>
+
+
+                    <div class="download-manager-body">
+                        
+                        <div class="download-item" style="display: none;">
+
+                            <div class="download-item-main-content">
+
+                                  <div class="download-item-text">
+                                <h6 >FILE 123 <span class="file-meta">(2min)</span></h6>
+                            </div>
+
+                           <div class="dm-actions tab-container">
+                                    <!-- Start / Pause / Retry as tabs -->
+                                    <div class="tab-child" index="1">
+                                        <button class="dm-btn start"><span class="material-symbols-outlined">play_arrow</span></button>
+                                    </div>
+                                    <div class="tab-child" index="2">
+                                        <button class="dm-btn pause"><span class="material-symbols-outlined">pause</span></button>
+                                    </div>
+                                    <div class="tab-child" index="3">
+                                        <button class="dm-btn retry"><span class="material-symbols-outlined">autorenew</span></button>
+                                    </div>
+
+                                    <!-- Remove button separate -->
+                                    <button class="dm-btn remove">
+                                        <span class="material-symbols-outlined">delete</span>
+                                    </button>
+                            </div>
+
+                        </div>
+
+                            <div class="download-item-meta-data">
+                                
+                                <div class="progress-container">
+                                     <div class="progress-bar" style="width: 20%"></div>
+                                </div>
+
+                            </div>
+                        
+
+                        </div>
+
+
+                          <div class="download-item" style="display: none;">
+
+                            <div class="download-item-main-content">
+
+                                  <div class="download-item-text">
+                                <h6 >FILE 123 <span class="file-meta">(2min)</span></h6>
+                            </div>
+
+                           <div class="dm-actions tab-container">
+                                    <!-- Start / Pause / Retry as tabs -->
+                                    <div class="tab-child" index="1">
+                                        <button class="dm-btn start"><span class="material-symbols-outlined">play_arrow</span></button>
+                                    </div>
+                                    <div class="tab-child" index="2">
+                                        <button class="dm-btn pause"><span class="material-symbols-outlined">pause</span></button>
+                                    </div>
+                                    <div class="tab-child" index="3">
+                                        <button class="dm-btn retry"><span class="material-symbols-outlined">autorenew</span></button>
+                                    </div>
+
+                                    <!-- Remove button separate -->
+                                    <button class="dm-btn remove">
+                                        <span class="material-symbols-outlined">delete</span>
+                                    </button>
+                            </div>
+
+                        </div>
+
+                            <div class="download-item-meta-data">
+                                
+                                <div class="progress-container">
+                                     <div class="progress-bar" style="width: 20%"></div>
+                                </div>
+
+                            </div>
+                        
+
+                        </div>
+
                     </div>
-
-                
-
-                </div>
-
-                <div class="cancel-button-container">
-                    
-                    <button class="no-button close-settings-tab" icon="cancel">
-                        <span class="material-symbols-outlined">close</span>
-                    </button>    
-
-                </div>
 
             </div>
+
+
+    </div>
+
+
+            <div class="settings tab-child" index="2">
+    
+    <div class="settings-header">
+        <h1>Settings</h1>
+    </div>
+    
+    <div class="settings-parts full-width">
+        
+        <!-- ACCOUNT SECTION -->
+        <div class="settings-section">
+            <div class="settings-section-title">Account</div>
+        </div>
+        
+        <!-- Opens Profile Modal -->
+        <div class="setting-profile">
+            <button class="uk-button" uk-toggle="target: #profile-modal">
+                <span style="display: flex; align-items: center;">
+                    <span class="setting-icon">👤</span>
+                    Update Your Profile
+                </span>
+            </button>
+        </div>
+        
+        <!-- Opens Password Modal -->
+        <div class="setting-profile">
+            <button class="uk-button" uk-toggle="target: #password-modal">
+                <span style="display: flex; align-items: center;">
+                    <span class="setting-icon">🔒</span>
+                    Change Password
+                </span>
+            </button>
+        </div>
+
+        <!-- Opens Privacy Modal -->
+        <div class="setting-profile">
+            <button class="uk-button" uk-toggle="target: #privacy-modal">
+                <span style="display: flex; align-items: center;">
+                    <span class="setting-icon">🛡️</span>
+                    Privacy Settings
+                </span>
+            </button>
+        </div>
+
+        <!-- CONTACTS SECTION -->
+        <div class="settings-section">
+            <div class="settings-section-title">Contacts</div>
+        </div>
+
+        <!-- Already exists - just closes settings and shows contacts -->
+        <div class="setting-profile">
+            <button class="uk-button show-contact-list-button">
+                <span style="display: flex; align-items: center;">
+                    <span class="setting-icon">📞</span>
+                    Contact List
+                </span>
+            </button>
+        </div>
+
+        <!-- Opens Blocked Modal -->
+        <div class="setting-profile">
+            <button class="uk-button" uk-toggle="target: #blocked-modal">
+                <span style="display: flex; align-items: center;">
+                    <span class="setting-icon">🚫</span>
+                    Blocked Contacts
+                </span>
+            </button>
+        </div>
+
+        <!-- PREFERENCES SECTION -->
+        <div class="settings-section">
+            <div class="settings-section-title">Preferences</div>
+        </div>
+
+        <!-- Inline Toggle (no modal) -->
+        <div class="setting-profile">
+            <button class="uk-button" style="justify-content: space-between;">
+                <span style="display: flex; align-items: center;">
+                    <span class="setting-icon">🔔</span>
+                    Notifications
+                </span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="notifications-toggle" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </button>
+        </div>
+
+        <!-- Opens Appearance Modal -->
+        <div class="setting-profile">
+            <button class="uk-button" uk-toggle="target: #appearance-modal">
+                <span style="display: flex; align-items: center;">
+                    <span class="setting-icon">🎨</span>
+                    Appearance
+                </span>
+            </button>
+        </div>
+
+        <!-- Opens Storage Modal -->
+        <div class="setting-profile">
+            <button class="uk-button" uk-toggle="target: #storage-modal">
+                <span style="display: flex; align-items: center;">
+                    <span class="setting-icon">💾</span>
+                    Storage & Data
+                </span>
+            </button>
+        </div>
+
+        <!-- ABOUT SECTION -->
+        <div class="settings-section">
+            <div class="settings-section-title">About</div>
+        </div>
+
+        <!-- Opens Help Modal or External Link -->
+        <div class="setting-profile">
+            <button class="uk-button" uk-toggle="target: #help-modal">
+                <span style="display: flex; align-items: center;">
+                    <span class="setting-icon">❓</span>
+                    Help & Support
+                </span>
+            </button>
+        </div>
+
+        <!-- Opens About Modal -->
+        <div class="setting-profile">
+            <button class="uk-button" uk-toggle="target: #about-modal">
+                <span style="display: flex; align-items: center;">
+                    <span class="setting-icon">ℹ️</span>
+                    About App
+                </span>
+            </button>
+        </div>
+
+        <!-- DANGER ZONE -->
+        <div class="settings-section" style="margin-top: 24px;">
+            <div class="settings-section-title" style="color: #E74C3C;">Danger Zone</div>
+        </div>
+
+        <!-- Triggers Logout Action -->
+        <div class="setting-profile">
+            <button class="uk-button logout-button" style="color: #E74C3C;">
+                <span style="display: flex; align-items: center;">
+                    <span class="setting-icon">🚪</span>
+                    Log Out
+                </span>
+            </button>
+        </div>
+
+    </div>
+
+    <div class="cancel-button-container">
+        <button class="no-button close-settings-tab">
+            <span class="material-symbols-outlined">close</span>
+        </button>    
+    </div>
+
+</div>
+
+<!-- ===== MODALS START HERE ===== -->
+
+<!-- Profile Modal -->
+<div id="profile-modal" uk-modal>
+    <div class="uk-modal-dialog uk-modal-body">
+        <h2 class="uk-modal-title">Update Profile</h2>
+        
+        <form class="uk-form-stacked">
+            <div class="uk-margin">
+                <label class="uk-form-label">Profile Photo</label>
+                <input type="file" accept="image/*">
+            </div>
+            
+            <div class="uk-margin">
+                <label class="uk-form-label">Display Name</label>
+                <input class="uk-input" type="text" placeholder="John Doe">
+            </div>
+            
+            <div class="uk-margin">
+                <label class="uk-form-label">Bio</label>
+                <textarea class="uk-textarea" rows="3" placeholder="Tell us about yourself..."></textarea>
+            </div>
+        </form>
+        
+        <div class="modal-actions">
+            <button class="uk-modal-close uk-button uk-button-danger">Cancel</button>
+            <button class="uk-modal-close uk-button uk-button-primary">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- Password Modal -->
+<div id="password-modal" uk-modal>
+    <div class="uk-modal-dialog uk-modal-body">
+        <h2 class="uk-modal-title">Change Password</h2>
+        
+        <form class="uk-form-stacked">
+            <div class="uk-margin">
+                <label class="uk-form-label">Current Password</label>
+                <input class="uk-input" type="password">
+            </div>
+            
+            <div class="uk-margin">
+                <label class="uk-form-label">New Password</label>
+                <input class="uk-input" type="password">
+            </div>
+            
+            <div class="uk-margin">
+                <label class="uk-form-label">Confirm New Password</label>
+                <input class="uk-input" type="password">
+            </div>
+        </form>
+        
+        <div class="modal-actions">
+            <button class="uk-modal-close uk-button uk-button-danger">Cancel</button>
+            <button class="uk-modal-close uk-button uk-button-primary">Update Password</button>
+        </div>
+    </div>
+</div>
+
+<!-- Privacy Modal -->
+<div id="privacy-modal" uk-modal>
+    <div class="uk-modal-dialog uk-modal-body">
+        <h2 class="uk-modal-title">Privacy Settings</h2>
+        
+        <div class="privacy-options">
+            <div class="privacy-item">
+                <span>Show Last Seen</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            
+            <div class="privacy-item">
+                <span>Show Profile Photo</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            
+            <div class="privacy-item">
+                <span>Read Receipts</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+        </div>
+        
+        <div class="modal-actions">
+            <button class="uk-modal-close uk-button uk-button-primary">Done</button>
+        </div>
+    </div>
+</div>
+
+<!-- Appearance Modal -->
+<div id="appearance-modal" uk-modal>
+    <div class="uk-modal-dialog uk-modal-body">
+        <h2 class="uk-modal-title">Appearance</h2>
+        
+        <div class="appearance-options">
+            <label class="uk-form-label">Theme</label>
+            <select class="uk-select">
+                <option>Dark (Current)</option>
+                <option>Light</option>
+                <option>Auto (System)</option>
+            </select>
+            
+            <label class="uk-form-label" style="margin-top: 16px;">Accent Color</label>
+            <div class="color-options">
+                <button class="color-circle" style="background: #1E90FF;"></button>
+                <button class="color-circle" style="background: #2ECC71;"></button>
+                <button class="color-circle" style="background: #E74C3C;"></button>
+                <button class="color-circle" style="background: #9B59B6;"></button>
+            </div>
+        </div>
+        
+        <div class="modal-actions">
+            <button class="uk-modal-close uk-button uk-button-danger">Cancel</button>
+            <button class="uk-modal-close uk-button uk-button-primary">Apply</button>
+        </div>
+    </div>
+</div>
+
+<!-- About Modal -->
+<div id="about-modal" uk-modal>
+    <div class="uk-modal-dialog uk-modal-body">
+        <h2 class="uk-modal-title">About</h2>
+        
+        <div class="about-content">
+            <p><strong>Version:</strong> 1.0.0</p>
+            <p><strong>Build:</strong> 2026.02.16</p>
+            <p style="margin-top: 16px;">
+                A modern messaging application built with love ❤️
+            </p>
+        </div>
+        
+        <div class="modal-actions">
+            <button class="uk-modal-close uk-button uk-button-primary">Close</button>
+        </div>
+    </div>
+</div>
 
             <div class="search-result tab-child" index="3">
 
@@ -361,6 +758,11 @@
             <button class="uk-offcanvas-close" type="button" uk-close></button>
         </div>
     </div>
+
+
+
+
+
 
 
 

@@ -1,8 +1,15 @@
 import { fileHandler } from "../handlers/fileHandler.js";
 import { apiHandler } from "../handlers/requestHandling.js";
-import { DOWNLOAD_EVENTS } from "./Actions.js";
+import { DOWNLOAD_EVENTS, REQUEST_APP_DATA } from "./Actions.js";
 import { eventBus } from "./EventBus.js";
 
+
+export const DOWNLOADING_STATUS = {
+    WAITING:"waiting",
+    DOWNLOADING:"downloading",
+    PAUSED:"paused",
+    FINISHED:"finished"
+}
 
 
 class Node {
@@ -154,10 +161,58 @@ export class DownloadManager {
 
 
     addFile(roomID,messageID,fileName,mimeType){
-       this.queue.append({roomID,messageID,fileName,mimeType})
+       this.queue.append({roomID,messageID,fileName,mimeType});
+       eventBus.emit(DOWNLOAD_EVENTS.ADDED_TO_QUEUE,{roomID,messageID,fileName,mimeType});
        this._processQueue()
     }
 
+    pauseDownload({fileName,messageID}){
+        const fileID = this._getName(messageID,fileName)
+        if(this.downloadingItems.has(fileID)){
+            try{
+                this.downloadingItems.get(fileID).abort('User cancelled the request')
+            }catch(error){
+                console.log("Download cancelled")
+            }
+            
+        }
+    }
+
+
+
+    startFromPaused({messageID,fileName}){
+        console.log("Emmiting request for ",messageID,fileName)
+        eventBus.emit(REQUEST_APP_DATA.TEMP_FILE_INFO,{messageID,fileName})
+    }
+
+    acceptStartFromPaused({messageID,roomID,fileName,mimeType,downloaded}){
+        try{
+            
+            const controller = new AbortController()
+            const signal = controller.signal;
+            const fileID = this._getName(messageID,fileName)
+            fileHandler.retrieveFilePausedFromServer(roomID,
+                messageID,
+                fileName,
+                downloaded,
+                mimeType,
+                this._downloadProgressCallback(messageID,fileName),
+                signal
+              
+            ).then(e => {
+                if(e){
+                  console.log("This is the downloaded file",e)
+                  this._onDownloadFinished(messageID,fileName,e,mimeType)
+                }
+                 
+            })
+
+            this.downloadingItems.set(fileID,controller)
+            this.activeDownloads++;
+        }catch(error){
+            console.error(error)
+        }
+    }
 
     cancelDownload(messageID,fileName){
         const fileID = this._getName(messageID,fileName)
@@ -200,8 +255,11 @@ export class DownloadManager {
                 signal
               
             ).then(e => {
-                    console.log("This is the downloaded file",e)
+                if(e){
+                  console.log("This is the downloaded file",e)
                   this._onDownloadFinished(messageID,fileName,e,mimeType)
+                }
+                 
             })
 
             this.downloadingItems.set(fileID,controller)
@@ -212,11 +270,17 @@ export class DownloadManager {
         
     }
 
+    _startFromPaused({}){
+
+    }
+
 
     _downloadProgressCallback(messageID,fileName){
-        return (downloadedChunks) => {
+        return ({downloaded,fileSize}) => {
+
             const fileID = this._getName(messageID,fileName)
-            eventBus.emit(DOWNLOAD_EVENTS.UPDATE_FILE_DOWNLOADED_TOTAL_CHUNK,{fileID,downloadedChunks,messageID,fileName})
+            eventBus.emit(DOWNLOAD_EVENTS.UPDATE_FILE_DOWNLOADED_TOTAL_CHUNK,{fileID,downloaded,fileSize,messageID,fileName})
+
         }
     }
 
@@ -232,6 +296,8 @@ export class DownloadManager {
     _getName(messageID,fileName){
         return `${messageID}-${fileName}`
     }
+
+
 
 }
 
