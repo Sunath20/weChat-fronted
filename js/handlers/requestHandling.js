@@ -490,6 +490,30 @@ export class APIHandler {
         this.serverBase = "https://192.168.8.202:3000"
     }
 
+
+
+    savePublicKey(userID, publicKeyJWK){
+        const localPath = "/keys";
+        const url = this.serverBase + localPath;
+        return jsonFetch(url, {
+            method: "POST",
+            body: {
+                userID,
+                keyType: "public",
+                keyData: JSON.stringify(publicKeyJWK) // JWK is an object, stringify for storage
+            }
+        });
+    }
+
+    getPublicKey(userID){
+        const localPath = `/keys/${userID}`;
+        const url = this.serverBase + localPath;
+        return jsonFetch(url, {
+            method: "GET"
+        });
+    }
+
+
     /**
      * Fetch the messages from the database.
      * Room will identified by the users 
@@ -823,7 +847,7 @@ export class APIHandler {
 export const webSocketHandler = new WebSocketHandler()
 export const apiHandler = new APIHandler()
 
-eventBus.on(MESSAGE_TYPES.MESSAGE_RECEIVED,(payload) => {
-    const message = new DatabaseMessageModel(payload)
-    webSocketHandler.sendSetDeliveredMessages([message.messageID])
-})
+// eventBus.on(MESSAGE_TYPES.MESSAGE_RECEIVED,(payload) => {
+//     const message = new DatabaseMessageModel(payload)
+//     webSocketHandler.sendSetDeliveredMessages([message.messageID])
+// })

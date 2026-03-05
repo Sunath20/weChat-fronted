@@ -908,19 +908,39 @@ export class VisualHandler {
             payload:{messageID,fileName},
             event:DOWNLOAD_INTERACTIONS.PAUSE_DOWNLOAD_ITEM
         })
-
+        console.log(query(`.download-item[id="${messageID}"] > * button.start`),"Found the element to attach the start button")
         eventBus.emit(REGISTER_EVENTS.REGISTER_BUTTON_CLICK,{
             element:query(`.download-item[id="${messageID}"] > * button.start`),
             payload:{messageID,fileName},
             event:DOWNLOAD_INTERACTIONS.START_DOWNLOAD_FROM_PAUSED
         })
-    }
+
+        eventBus.emit(REGISTER_EVENTS.REGISTER_BUTTON_CLICK,{
+            element:query(`.download-item[id="${messageID}"] > * button.retry`),
+            payload:{messageID,fileName},
+            event:DOWNLOAD_INTERACTIONS.RETRY_DOWNLOAD
+        })
+
+        eventBus.emit(REGISTER_EVENTS.REGISTER_BUTTON_CLICK,{
+            element:query(`.download-item[id="${messageID}"] > * button.remove`),
+            payload:{messageID,fileName},
+            event:DOWNLOAD_INTERACTIONS.REMOVE_DOWNLOAD
+        })
+    
+}
 
     updateDownloadingMetaInfo({fileID,downloadedChunks,downloaded,fileSize,messageID,fileName}){
         const downloadItem = query(`.download-item[id="${messageID}"]`)
         const progressBar = downloadItem.querySelector(".progress-bar")
         const progress = Math.floor((downloaded / fileSize)*100);
         progressBar.style.width = progress + "%";
+    }
+
+    removeDownloadFromManager(messageID){
+        const downloadItem = query(`.download-item[id="${messageID}"]`)
+        if(downloadItem){
+            downloadItem.remove()
+        }
     }
 
 

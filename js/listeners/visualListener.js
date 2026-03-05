@@ -183,18 +183,26 @@ export function initVisualListener(){
     })
 
     eventBus.on(DOWNLOAD_EVENTS.START_DOWNLOAD,({roomID,messageID,fileName,mimeType}) => {
-            visualHandler.updateDownloadItemActionButtonsOnState(messageID,DOWNLOADING_STATUS.DOWNLOADING)
+            visualHandler.addNewFileToDownloadManager({roomID,fileName,messageID,mimeType})
+            visualHandler.updateDownloadItemActionButtonsOnState(messageID,DOWNLOADING_STATUS.WAITING);
+    })
+
+    eventBus.on(DOWNLOAD_EVENTS.INIT_FILE_SIZE,({messageID,fileSize}) => {
+        visualHandler.updateDownloadingMetaInfo({messageID,fileSize,downloaded:0})
     })
 
     eventBus.on(DOWNLOAD_EVENTS.DOWNLOAD_FINISH,({mimeType,messageID,fileName,file}) => {
-        visualHandler.addFilePreviewAfterLoading({messageID,file,fileName,mimeType,fromNetwork:true})
         visualHandler.removeDownloadButtonForFile({mimeType,messageID,fileName,file})
         visualHandler.updateDownloadItemActionButtonsOnState(messageID,DOWNLOADING_STATUS.FINISHED)
     })
 
-    eventBus.on(DOWNLOAD_EVENTS.UPDATE_FILE_DOWNLOADED_TOTAL_CHUNK,({fileID,downloadedChunks,downloaded,fileSize,messageID,fileName}) => {
-         console.log("File is downloading ",fileID,downloaded,fileSize,messageID,fileName,downloadedChunks)
-        visualHandler.updateDownloadingMetaInfo({fileID,downloaded,fileSize,messageID,downloadedChunks,fileName})
+    eventBus.on(FILE_EVENTS.FILE_COMMITTED_TEMP_FILE,({messageID,file,fileName,mimeType}) => {
+          visualHandler.addFilePreviewAfterLoading({messageID,file,fileName,mimeType,fromNetwork:true})
+    })
+
+    eventBus.on(DOWNLOAD_EVENTS.RECEIVED_A_CHUNK,({fileID,chunks,downloaded,fileSize,messageID,fileName}) => {
+        console.log("Updating ",downloaded,chunks,fileName)
+        visualHandler.updateDownloadingMetaInfo({fileID,downloaded,fileSize,messageID,chunks,fileName})
         visualHandler.updateDownloadItemActionButtonsOnState(messageID,DOWNLOADING_STATUS.DOWNLOADING)
     })
 
@@ -217,6 +225,10 @@ export function initVisualListener(){
 
     eventBus.on(DOWNLOAD_INTERACTIONS.START_DOWNLOAD_FROM_PAUSED,({messageID}) => {
         visualHandler.updateDownloadItemActionButtonsOnState(messageID,DOWNLOADING_STATUS.DOWNLOADING)
+    })
+
+    eventBus.on(DOWNLOAD_INTERACTIONS.REMOVE_DOWNLOAD,({messageID,fileName}) => {
+        visualHandler.removeDownloadFromManager(messageID)
     })
 
     

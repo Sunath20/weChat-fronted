@@ -1,301 +1,292 @@
 import { fileHandler } from "../handlers/fileHandler.js";
 import { apiHandler } from "../handlers/requestHandling.js";
-import { DOWNLOAD_EVENTS, REQUEST_APP_DATA } from "./Actions.js";
+import { sleep } from "../utils.js";
+import { DOWNLOAD_EVENTS } from "./Actions.js";
 import { eventBus } from "./EventBus.js";
+
+export const SERVER_BASE = "https://192.168.8.202:3000"
+class Queue {
+    constructor() {
+        this.items = [];
+    }
+
+    // Add element to the end of the queue
+    enqueue(element) {
+        this.items.push(element);
+    }
+
+    // Remove and return the first element from the queue
+    dequeue() {
+        if (this.isEmpty()) {
+            return "Queue is empty";
+        }
+        return this.items.shift();
+    }
+
+    // View the first element in the queue
+    peek() {
+        return this.items[0];
+    }
+
+    // Check if the queue is empty
+    isEmpty() {
+        return this.items.length === 0;
+    }
+
+    // Get the size of the queue
+    size() {
+        return this.items.length;
+    }
+
+    find(func){
+        return this.items.find(func);
+    }
+
+    remove(messageID){
+        const index = this.items.findIndex(e => e === messageID);
+        if(index !== -1) this.items.splice(index, 1);
+    }
+}
 
 
 export const DOWNLOADING_STATUS = {
-    WAITING:"waiting",
-    DOWNLOADING:"downloading",
-    PAUSED:"paused",
-    FINISHED:"finished"
+    WAITING:"WAITING",
+    DOWNLOADING:"DOWNLOADING",
+    PAUSED:"PAUSED",
 }
 
 
-class Node {
-    constructor(value) {
-        this.value = value;   // The data you want to store (e.g., file info)
-        this.next = null;     // Pointer to the next node
-        this.prev = null;     // Pointer to the previous node
-    }
-}
-
-
-
-// Doubly Linked List class
-class DoublyLinkedList {
-    constructor() {
-        this.head = null; // front of the queue
-        this.tail = null; // end of the queue
-        this.size = 0;
-    }
-
-    // Add to tail (enqueue)
-    append(value) {
-        const node = new Node(value);
-
-        if (!this.head) { // empty list
-            this.head = node;
-            this.tail = node;
-        } else {
-            node.prev = this.tail;
-            this.tail.next = node;
-            this.tail = node;
-        }
-
-        this.size++;
-        return node; // return node reference for potential removal later
-    }
-
-    // Remove from head (dequeue)
-    removeHead() {
-        if (!this.head) return null;
-
-        const removedNode = this.head;
-        if (this.head === this.tail) {
-            this.head = null;
-            this.tail = null;
-        } else {
-            this.head = this.head.next;
-            this.head.prev = null;
-        }
-
-        removedNode.next = null; // clean up
-        this.size--;
-        return removedNode.value;
-    }
-
-    // Remove an arbitrary node (O(1))
-    remove(node) {
-        if (!node) return null;
-
-        if (node === this.head) return this.removeHead();
-        if (node === this.tail) {
-            this.tail = this.tail.prev;
-            this.tail.next = null;
-            node.prev = null;
-            this.size--;
-            return node.value;
-        }
-
-        node.prev.next = node.next;
-        node.next.prev = node.prev;
-        node.prev = null;
-        node.next = null;
-        this.size--;
-        return node.value;
-    }
-
-  // Remove a node by messageID
-    removeById(messageID) {
-        if (!messageID || !this.head) return null; // empty list or invalid ID
-
-        // Check head
-        if (this.head.value?.messageID === messageID) {
-            const removed = this.head;
-            this.head = this.head.next;
-            if (this.head) this.head.prev = null;
-            else this.tail = null; // list is now empty
-            removed.next = null;
-            this.size--;
-            return removed.value;
-        }
-
-        // Check tail
-        if (this.tail.value?.messageID === messageID) {
-            const removed = this.tail;
-            this.tail = this.tail.prev;
-            if (this.tail) this.tail.next = null;
-            else this.head = null; // list is now empty
-            removed.prev = null;
-            this.size--;
-            return removed.value;
-        }
-
-        // Search middle nodes
-        let current = this.head.next;
-        while (current) {
-            if (current.value?.messageID === messageID) {
-                current.prev.next = current.next;
-                if (current.next) current.next.prev = current.prev;
-                current.next = current.prev = null;
-                this.size--;
-                return current.value;
-            }
-            current = current.next;
-        }
-
-        // Not found
-        return null;
-    }
-
-    // Peek head without removing
-    peek() {
-        return this.head ? this.head.value : null;
-    }
-
-    isEmpty() {
-        return this.size === 0;
-    }
-
-    print() {
-        let current = this.head;
-        const values = [];
-        while (current) {
-            values.push(current.value);
-            current = current.next;
-        }
-        console.log(values);
-    }
-}
-
-
-export class DownloadManager {
+class DownloadManager {
     
-    constructor(downloadLimit=2){
+    constructor(downloadLimit=5){
+        this.serverBase = SERVER_BASE + "/"+"files";
+        this.downloads = new Queue();
+        
+        this.downloadInfo = new Map();
+
+        this.downloadSignals = new Map();
+        this.currentDownloads = new Set();
+        this.pausedDownloads = new Map();
         this.downloadLimit = downloadLimit;
-        this.downloadingItems = new Map();
-        this.activeDownloads = 0;
-        this.queue = new DoublyLinkedList();
+        this.retryInfo = new Map();
+        this.maximumRetries = 5;
     }
 
 
-    addFile(roomID,messageID,fileName,mimeType){
-       this.queue.append({roomID,messageID,fileName,mimeType});
-       eventBus.emit(DOWNLOAD_EVENTS.ADDED_TO_QUEUE,{roomID,messageID,fileName,mimeType});
-       this._processQueue()
+async addFile(roomID, messageID, fileName, mimeType){
+    console.log("Adding the file ",messageID)
+    // already in queue or actively downloading, ignore
+    const fileInfo = this.downloads.find(e => e === messageID);
+    if(fileInfo || this.currentDownloads.has(messageID)) return;
+
+    // if paused, resume it
+    if(this.pausedDownloads.has(messageID)){
+        this.startFromPaused(messageID);
+        return;
     }
 
-    pauseDownload({fileName,messageID}){
-        const fileID = this._getName(messageID,fileName)
-        if(this.downloadingItems.has(fileID)){
-            try{
-                this.downloadingItems.get(fileID).abort('User cancelled the request')
-            }catch(error){
-                console.log("Download cancelled")
-            }
-            
-        }
+    // check if we have existing progress in IndexedDB
+    const tempFile = await fileHandler.readTempFile(messageID);
+    if(tempFile){
+        // restore from temp file
+        this.downloadInfo.set(messageID, {
+            roomID, 
+            messageID, 
+            fileName, 
+            mimeType, 
+            status: DOWNLOADING_STATUS.WAITING,
+            downloaded: tempFile.downloaded,
+            downloadedChunks: tempFile.downloadedChunks
+        });
+    }else{
+        // fresh download
+        this.downloadInfo.set(messageID, {roomID, messageID, fileName, mimeType, status: DOWNLOADING_STATUS.WAITING});
     }
 
+    this.downloads.enqueue(messageID);
+    this._processQueue();
+}
 
 
-    startFromPaused({messageID,fileName}){
-        console.log("Emmiting request for ",messageID,fileName)
-        eventBus.emit(REQUEST_APP_DATA.TEMP_FILE_INFO,{messageID,fileName})
-    }
 
-    acceptStartFromPaused({messageID,roomID,fileName,mimeType,downloaded}){
-        try{
-            
-            const controller = new AbortController()
-            const signal = controller.signal;
-            const fileID = this._getName(messageID,fileName)
-            fileHandler.retrieveFilePausedFromServer(roomID,
-                messageID,
-                fileName,
-                downloaded,
-                mimeType,
-                this._downloadProgressCallback(messageID,fileName),
-                signal
-              
-            ).then(e => {
-                if(e){
-                  console.log("This is the downloaded file",e)
-                  this._onDownloadFinished(messageID,fileName,e,mimeType)
+    async _downloadFile({roomID,messageID,fileName,mimeType,downloaded=null,downloadedChunks=0}){
+                
+                
+                if(this.downloadSignals.has(messageID)){return;}
+
+                let url = ""
+
+                if(downloaded == null){
+                     url = this.serverBase + "/" + "readFile" + "/" + roomID+"/"+ this._downloadFileName(messageID,fileName)
+                }else{
+                    url = this.serverBase + "/" + "readFileWithOffset" + "/" + roomID+"/"+ this._downloadFileName(messageID,fileName)
+                    const builder = new URL(url)
+                    builder.searchParams.set('downloadedSize',downloaded);
+                    url = builder.toString()
                 }
-                 
-            })
 
-            this.downloadingItems.set(fileID,controller)
-            this.activeDownloads++;
-        }catch(error){
-            console.error(error)
+                const controller = new AbortController();
+                this.downloadSignals.set(messageID,controller);
+               const response = await fetch(url,{signal:controller.signal})
+               if(!response.ok){
+                    this._downloadFailed({roomID,messageID,fileName});
+                     return;
+               };
+
+            const data = this.downloadInfo.get(messageID)
+            this.downloadInfo.set(messageID,{...data,status:DOWNLOADING_STATUS.DOWNLOADING})
+       
+               const fileSize = response.headers.get('Content-Length')
+               const totalFileSize = Number(fileSize) + Number(downloaded || 0);
+               eventBus.emit(DOWNLOAD_EVENTS.INIT_FILE_SIZE,{messageID,fileSize:totalFileSize})
+       
+               const reader = response.body.getReader()
+       
+               let receiveLength = downloaded || 0
+               let anyError = false;
+               let chunks = downloadedChunks || 0;
+       
+               try {
+                       while (true){
+                       const {done,value} = await reader.read()
+                       
+                       if(done){
+                        this._downloadFinish({roomID,fileName,messageID})
+                        break;
+                       }
+                       receiveLength += value.length;
+                       chunks += 1;
+                       const info = this.downloadInfo.get(messageID);
+                    //    this.downloadInfo.set(messageID,{...info,downloaded:receiveLength,chunks,waitingFoEvents:true});
+                        await fileHandler.saveTempFile({downloaded:receiveLength,fileSize:totalFileSize,downloadedChunks:chunks,chunk:value,messageID,fileName,roomID,mimeType})
+                       eventBus.emit(DOWNLOAD_EVENTS.RECEIVED_A_CHUNK,{downloaded:receiveLength,fileSize:totalFileSize,downloadedChunks:chunks,chunk:value,messageID,fileName,roomID,mimeType});
+                    //    this.downloadInfo.set(messageID,{...info,downloaded:receiveLength,chunks,waitingFoEvents:false})
+                    //   await sleep(0.5);
+                }
+               }catch(error){
+                   
+                   if(error.name === "AbortError"){
+       
+                   return null;
+                   }
+       
+                   throw error;
+               }
+
+    }
+
+    _downloadFailed({roomID, messageID, fileName, mimeType}){
+        let retries = this.retryInfo.get(messageID) || 0;
+        retries += 1;
+        this.retryInfo.set(messageID, retries);
+
+        if(retries < this.maximumRetries){
+            // clean up current attempt
+            this.currentDownloads.delete(messageID);
+            this.downloadSignals.delete(messageID);
+            
+            // re-enqueue for retry
+            this.downloads.enqueue(messageID);
+            this._processQueue();
+        }else{
+            // max retries reached, remove from everything
+            this._removeFromAllInstances(messageID);
+            eventBus.emit(DOWNLOAD_EVENTS.FAILED_TO_DOWNLOAD, messageID);
         }
     }
 
-    cancelDownload(messageID,fileName){
-        const fileID = this._getName(messageID,fileName)
-        const downloadingItem = this.downloadingItems.get(fileID)
-        if(downloadingItem){
-            this.downloadingItems.delete(fileID)
-            this.activeDownloads--;
-            downloadingItem.abort('User cancel the downloading process');
-             eventBus.emit(DOWNLOAD_EVENTS.DOWNLOAD_CANCEL, { messageID, fileName, status: 'active' });
-            this._processQueue()
-            return;
-        };
+    _removeFromAllInstances(messageID){
+        this.currentDownloads.delete(messageID);
+        this.downloadSignals.get(messageID)?.abort();
+        this.downloadSignals.delete(messageID);
+        this.retryInfo.delete(messageID);
+        this.downloadInfo.delete(messageID);
+        this.pausedDownloads.delete(messageID);
+        this.downloads.remove(messageID);
+    }
+
+async startFromPaused(messageID){
+    console.log("We are gonna restart from where we left",messageID)
+    if(this.pausedDownloads.has(messageID)){
+        const info = this.downloadInfo.get(messageID);
+        this.pausedDownloads.delete(messageID);
+        this.downloadInfo.set(messageID, {...info, status: DOWNLOADING_STATUS.WAITING});
+        this.downloads.enqueue(messageID); // ✅ back in the queue
+        this._processQueue(); // ✅ let processQueue handle it naturally
+    }
+}
     
-        const queuedItem = this.queue.removeById(messageID)
-        if(queuedItem){
-            eventBus.emit(DOWNLOAD_EVENTS.DOWNLOAD_CANCEL, { messageID, fileName, status: 'queued' });
+    pauseDownload(messageID){
+        console.log("We are going to pause the download event",messageID)
+        if(this.currentDownloads.has(messageID)){
+            this.currentDownloads.delete(messageID);
+            this.downloadSignals.get(messageID).abort();
+            this.downloadSignals.delete(messageID);
+            this.retryInfo.delete(messageID);
+            this.pausedDownloads.set(messageID,'PAUSED');
+            const info = this.downloadInfo.get(messageID)
+            this.downloadInfo.set(messageID,{...info,status:DOWNLOADING_STATUS.PAUSED})
+            eventBus.emit(DOWNLOAD_EVENTS.PAUSED_DOWNLOADS,messageID);
         }
-        
+        this._processQueue()
     }
 
+ async removeDownload(messageID){
+    this.downloadSignals.get(messageID)?.abort();
+    this._removeFromAllInstances(messageID);
+    await fileHandler.removeTempFile(messageID); // ✅ wipe temp file too
+    eventBus.emit(DOWNLOAD_EVENTS.REMOVE_DOWNLOAD, messageID);
+    this._processQueue();
+}
 
-    _processQueue(){
-        while(this.activeDownloads < this.downloadLimit && this.queue.head){
-            const fileInfo = this.queue.removeHead();
-            this._startDownload(fileInfo)
-        }
-    }
+   _downloadFinish({roomID, messageID, fileName}){
+    const finishDownloadFileInfo = this.downloadInfo.get(messageID);
+    this._removeFromAllInstances(messageID); // ✅ cleans up
+    eventBus.emit(DOWNLOAD_EVENTS.DOWNLOAD_FINISH, finishDownloadFileInfo);
+    this._processQueue(); // ✅ should trigger next
+}
 
-    _startDownload({messageID,roomID,fileName,mimeType}){
-        try{
-            
-            const controller = new AbortController()
-            const signal = controller.signal;
-            const fileID = this._getName(messageID,fileName)
-            fileHandler.retrieveFileFromServer(roomID,
-                messageID,
-                fileName,
-                mimeType,
-                this._downloadProgressCallback(messageID,fileName),
-                signal
-              
-            ).then(e => {
-                if(e){
-                  console.log("This is the downloaded file",e)
-                  this._onDownloadFinished(messageID,fileName,e,mimeType)
-                }
-                 
-            })
-
-            this.downloadingItems.set(fileID,controller)
-            this.activeDownloads++;
-        }catch(error){
-            console.error(error)
-        }
-        
-    }
-
-    _startFromPaused({}){
-
-    }
-
-
-    _downloadProgressCallback(messageID,fileName){
-        return ({downloaded,fileSize}) => {
-
-            const fileID = this._getName(messageID,fileName)
-            eventBus.emit(DOWNLOAD_EVENTS.UPDATE_FILE_DOWNLOADED_TOTAL_CHUNK,{fileID,downloaded,fileSize,messageID,fileName})
-
-        }
-    }
-
-    _onDownloadFinished(messageID,fileName,file,mimeType){
-            const fileID = this._getName(messageID,fileName)
-            this.downloadingItems.delete(fileID);
-            this.activeDownloads--;
-            eventBus.emit(DOWNLOAD_EVENTS.DOWNLOAD_FINISH,{fileID,messageID,fileName,file,mimeType})
-            this._processQueue()
-    }
-
-
-    _getName(messageID,fileName){
+    _downloadFileName(messageID,fileName){
         return `${messageID}-${fileName}`
     }
+
+   _processQueue(){
+    while(!this.downloads.isEmpty()){
+        const messageID = this.downloads.dequeue();
+        this.currentDownloads.add(messageID);
+        const {roomID, fileName, mimeType, downloaded, downloadedChunks} = this.downloadInfo.get(messageID);
+        this._downloadFile({
+            roomID, 
+            messageID, 
+            fileName, 
+            mimeType,
+            downloaded: downloaded || null,
+            downloadedChunks: downloadedChunks || 0
+        });
+    }
+}
+
+
+async retryDownload(messageID){
+    const info = this.downloadInfo.get(messageID);
+    if(!info) return;
+
+    // clean up everything including temp file
+    this._removeFromAllInstances(messageID);
+    await fileHandler.removeTempFile(messageID);
+
+    // re-add as fresh download
+    this.downloadInfo.set(messageID, {
+        roomID: info.roomID,
+        messageID,
+        fileName: info.fileName,
+        mimeType: info.mimeType,
+        status: DOWNLOADING_STATUS.WAITING
+    });
+    this.downloads.enqueue(messageID);
+    this._processQueue();
+}
+
 
 
 

@@ -102,7 +102,8 @@ export const store = new Store({
   callUserStream:null,
   callRemoteStream:null,
   chatVisible:false,
-  downloads:readData('downloads') || {}
+  downloads:readData('downloads') || {},
+  activeFriendKey:null,
 });
 
 
@@ -545,4 +546,15 @@ export function getDownloadingInfo(messageID) {
 
 export function getDownloadingFilesMeta(){
   return store.getState()['downloads'] || {}
+}
+
+export function setActiveFriendKey(publicKey){
+    store.setState((state) => {
+        state['activeFriendKey'] = publicKey;
+        return state;
+    })
+}
+
+export function resolveActiveFriendKey(){
+    return store.getState()['activeFriendKey'];
 }

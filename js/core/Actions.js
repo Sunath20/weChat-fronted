@@ -127,7 +127,8 @@ export const FILE_EVENTS = {
     FILE_ACCEPT_DOWNLOAD_REQUEST:"file:event:accept:download-request",
     FILE_ACCEPTED_DOWNLOAD_REQUEST:"file:event:accepted:download-request",
     FILE_READ_TEMP:"file:event:read-temp-file",
-    FILE_READ_TEMP_FINISHED:"file:event:read-temp-file-completed"
+    FILE_READ_TEMP_FINISHED:"file:event:read-temp-file-completed",
+    FILE_COMMITTED_TEMP_FILE:"file:committed:temp:file-save"
 }
 
 export const FILE_INTERACTIONS = {
@@ -175,11 +176,13 @@ export const REGISTER_EVENTS = {
 
 export const DOWNLOAD_EVENTS = {
     START_DOWNLOAD:"download_start_new_download",
+    RECEIVED_A_CHUNK:"download:event:received-a-chunk",
     UPDATE_FILE_DOWNLOADED_TOTAL_CHUNK:"download_update_downloaded_total_chunks",
     DOWNLOAD_FINISH:"download_file_finished",
     INIT_FILE_SIZE:"download:event:init:file-size",
     ADDED_TO_QUEUE:"download:event:added-to-queue",
-    LOAD_PAUSED_DOWNLOADS:"download:event:load-downloading-items"
+    LOAD_PAUSED_DOWNLOADS:"download:event:load-downloading-items",
+    REMOVE_DOWNLOAD:"download:event:remove-download"
 }
 
 
@@ -189,7 +192,9 @@ export const DOWNLOAD_INTERACTIONS = {
     SHOW_FULL_MANAGER:"download:interactions:show:full-manager",
     MINIMIZE_DOWNLOAD_MANAGER:"download:interactions:minimized:manager",
     PAUSE_DOWNLOAD_ITEM:"download:interactions:paused:download-item",
-    START_DOWNLOAD_FROM_PAUSED:"download:interactions:start:from-paused"
+    START_DOWNLOAD_FROM_PAUSED:"download:interactions:start:from-paused",
+    RETRY_DOWNLOAD:"download:interactions:retry-download",
+    REMOVE_DOWNLOAD:"download:interactions:remove-download"
 }
 
 export const UPLOAD_INTERACTIONS = {
@@ -207,5 +212,18 @@ export const REQUEST_APP_DATA = {
 export const ERRORS = {
     MESSAGE_LOADING_FAILED:"error_message_load_failed",
     LOADING_PREVIOUS_MESSAGES_FAILED:"error_loading_previous_messages_failed",
-    TEMP_FILE_INFO_READ_FAILED:"temp:file:info:read:failed"
+    TEMP_FILE_INFO_READ_FAILED:"temp:file:info:read:failed",
+    TEMP_FILE_SAVING_FAILED:"temp:file:save-failed",
+    TEMP_FILE_COMMIT_FAILED:"temp:file-commit-fail"
+}
+
+
+export const ERROR_REASONS = {
+    TEMP_FILES:{
+        FILE_DOES_NOT_EXIST:"temp:file:does-not-exist"
+    },
+    SECURITY_KEY:{
+        READ_ERROR:"security:key-read-error",
+        FAILED_TO_WRITE:"security:key-written-failed"
+    }
 }

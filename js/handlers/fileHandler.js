@@ -1,11 +1,11 @@
 import { DatabaseMessageModel } from "../models.js";
 import { getSelectedUsersID, indexDBRequestToFunction, readData, sleep } from "../utils.js";
 import { DataHandler } from "./dataHandler.js";
-import { apiHandler, APIHandler, WebSocketHandler } from "./requestHandling.js";
 import { VisualHandler } from "./visualHandler.js";
-import { MAIN_HANDLERS, MESSAGE_TYPES,CALL_TYPES,FILE_TYPES,USER_HANDLES, DOWNLOAD_EVENTS } from "../core/Actions.js"
+import { MAIN_HANDLERS, MESSAGE_TYPES,CALL_TYPES,FILE_TYPES,USER_HANDLES, DOWNLOAD_EVENTS, ERROR_REASONS, FILE_EVENTS, ERRORS } from "../core/Actions.js"
 import { eventBus } from "../core/EventBus.js";
 import { getDownloadingInfo } from "../core/store.js";
+import { SERVER_BASE } from "../core/DownloadManager.js";
 
 
 
@@ -41,14 +41,6 @@ export class FileHandler {
     }
 
     
-   /**
-    * Set the API Handler
-    * @param {APIHandler} apiHandler 
-    */ 
-   setAPIHandler(apiHandler){
-        this.apiHandler = apiHandler
-        this.serverBase = this.apiHandler.getServerBase()
-   }
 
 
    setYetToUploadFiles(files){
@@ -166,7 +158,7 @@ export class FileHandler {
       async retrieveFileFromServer(roomID,messageID,fileName,mimeType,downloadingCallback=(chunks)=>{},signal=null){
 
         
-        const url = apiHandler.getServerBase() +  `/files/readFile/${roomID}/${messageID}-${fileName}`
+        const url = SERVER_BASE +  `/files/readFile/${roomID}/${messageID}-${fileName}`
         const response = await fetch(url,{signal})
         if(!response.ok)return;
 
@@ -258,10 +250,11 @@ export class FileHandler {
 
 
 const FILE_DATABASE_NAME = "FILES_MEDIA"
-const FILE_DATABASE_VERSION = 5
+const FILE_DATABASE_VERSION = 6
 const toPromise = indexDBRequestToFunction
 const FILE_INDEX_TAG = "files"
 const DOWNLOADING_FILES_INDEXES = "downloading_files"
+const SECURITY_KEY_INDEXES = "security_keys_indexes"
 
 export class WebFileHandler extends FileHandler {
     
@@ -272,9 +265,14 @@ export class WebFileHandler extends FileHandler {
         this.fileStore = null;
         this.fileReadRequest  = []
         this.tempFileRequests = []
+        this.securityKeyRequests = []
         this.maximumFileSizeWithoutRequest = 1024 * 1024
         this.readFile = this.readFile.bind(this)
-
+        this.readSecurityKey = this.readSecurityKey.bind(this)
+        this.executions = []
+        this.executing = false;
+        this.addAnExecution = this.addAnExecution.bind(this)
+        this._execute = this._execute.bind(this)
     }
 
     /**
@@ -293,6 +291,13 @@ export class WebFileHandler extends FileHandler {
         this.dbOkay = true;
         this.getFileStore()
 
+        // Read the security keys
+        for(let i = 0 ; i < this.securityKeyRequests.length;i++){
+            const keyRequest = this.securityKeyRequests[i];
+            const key = await this.readSecurityKey(keyRequest['id'])
+            keyRequest['callback'](key);
+        }
+
         // Execute the file read requests
         for(let i = 0 ; i < this.fileReadRequest.length;i++){
             const fileRequest = this.fileReadRequest[i]
@@ -305,6 +310,8 @@ export class WebFileHandler extends FileHandler {
             const file = await this.readFile(fileRequest['filePath'])
             fileRequest['callback'](file)
         }
+
+
         
     }
 
@@ -329,6 +336,11 @@ export class WebFileHandler extends FileHandler {
             const downloadFileStoreRequest = this.db.createObjectStore(DOWNLOADING_FILES_INDEXES,{keyPath:"messageID"})
             await toPromise(downloadFileStoreRequest.transaction,true)
         }
+
+        if(!this.db.objectStoreNames.contains(SECURITY_KEY_INDEXES)){
+            const securityKeyStoreRequest = this.db.createObjectStore(SECURITY_KEY_INDEXES,{keyPath:"id"});
+            await toPromise(securityKeyStoreRequest.transaction,true);
+        }
         
 
     }
@@ -349,9 +361,83 @@ export class WebFileHandler extends FileHandler {
         this.tempStore = this.db.transaction([DOWNLOADING_FILES_INDEXES],'readwrite').objectStore(DOWNLOADING_FILES_INDEXES)
     }
 
-    saveTempFile(payload){
-        this.getTempFilestore()
-        this.tempStore.add(payload)
+    getSecurityKeyStore(){
+        this.securityKeyStore = this.db.transaction([SECURITY_KEY_INDEXES],'readwrite').objectStore(SECURITY_KEY_INDEXES)
+    }
+
+   async saveTempFile({downloaded, chunk, fileSize, downloadedChunks, messageID, fileName, roomID, mimeType}){
+    return new Promise((resolve, reject) => {
+
+        const executingFunc = async () => {
+            this.getTempFilestore();
+            const existingResult = await toPromise(this.tempStore.get(messageID));
+            const result = existingResult.target.result;
+
+            if(result){
+                this.getTempFilestore();
+                const updatedObject = Object.assign(result, {downloaded, fileSize});
+                updatedObject['chunks'].push(chunk);
+                updatedObject['downloadedChunks'] = downloadedChunks;
+                await toPromise(this.tempStore.put(updatedObject));
+            } else {
+                this.getTempFilestore();
+                await toPromise(this.tempStore.add({
+                    messageID,
+                    chunks: [chunk],
+                    downloaded,
+                    fileSize,
+                    downloadedChunks,
+                    fileName,
+                    roomID,
+                    mimeType
+                }));
+            }
+        };
+
+        const onSuccess = () => resolve(true);
+        const onError = () => resolve(false);
+
+        this.addAnExecution(executingFunc, onSuccess, onError);
+    });
+}
+
+    addAnExecution(func,onSuccess,onError){
+        console.log("New execution added ")
+        this.executions.push({func,onSuccess,onError});
+        this._execute();
+    }
+
+
+    _execute(){
+        console.log("Is exectuting a one ",this.executing)
+        function resetExecution(){
+            this.executing = false;
+        }
+
+        const reset = resetExecution.bind(this);
+
+        if(this.executing){return;}
+        if(this.executions.length != 0 ){
+            const {func,onSuccess,onError} = this.executions.shift();
+            this.executing = true;
+            // console.log("We got here too we set the execution to the true",func)
+            func().then(e => {
+                // console.log("Trying to reset")
+                // reset();
+                // this._execute();
+                onSuccess(e);
+            }).catch(error => {
+                console.error(error)
+                // console.log("Failed to resert",error)
+                // reset();
+                // this._execute()
+                onError(error)
+            }).finally( () => {
+                reset();
+                // console.log("Finally set it to false",this.executing,this._execute)
+                this._execute();
+            });
+        }
     }
 
 
@@ -375,7 +461,7 @@ export class WebFileHandler extends FileHandler {
                 }else{
                   this.fileReadRequest.push({filePath,callback:(event) => {
                         resolve(event)
-                    }})
+                }})
         }
         
     })
@@ -392,16 +478,22 @@ export class WebFileHandler extends FileHandler {
      */
     async readTempFile(filePath){
         return new Promise( async (resolve,reject)  => {
+            console.log("Is my db okay ",this.dbOkay)
         if(this.dbOkay){
-                    this.getTempFilestore()
-                    try{
-                        const file = await toPromise(this.tempStore.get(filePath))
-                        resolve(file.target.result)
-                    }catch(error){
-                        resolve("No files")
-                    }
+        
+            const executingFunc = async () => {
+            this.getTempFilestore();
+            const result = await toPromise(this.tempStore.get(filePath));
+            console.log("Here is the file result ",result)
+            return result.target.result;
+        };
+
+        const onSuccess = (result) => resolve(result);
+        const onError = () => reject();
+
+        this.addAnExecution(executingFunc, onSuccess, onError);
                     
-                }else{
+        }else{
                   this.tempFileRequests.push({filePath,callback:(event) => {
                         resolve(event)
                     }})
@@ -421,7 +513,7 @@ export class WebFileHandler extends FileHandler {
 
     async retrieveFilePausedFromServer(roomID,messageID,fileName,downloadedSize,mimeType,downloadingCallback=(chunks)=>{},signal=null){
         const callback = this.downloadingCallback(messageID,downloadingCallback).bind(this);
-        console.log(fileName,"Why is this undefined ")
+        // console.log(fileName,"Why is this undefined ")
         const response = await super.retrieveFilePausedFromServer(roomID,messageID,fileName,downloadedSize,mimeType,callback,signal=null)
 
         try{
@@ -436,7 +528,7 @@ export class WebFileHandler extends FileHandler {
     }
 
 
-    downloadingCallback(messageID,callback){
+    downloadingCallback(messageID){
         return async ({downloaded,chunk,fileSize,downloadedChunks}) => {
             this.getTempFilestore();
             const result = await this.readTempFile(messageID);
@@ -463,14 +555,98 @@ export class WebFileHandler extends FileHandler {
 
 
 
+
     getFileInfoIfExist(roomID,messageID,fileName,mimeType){ 
        return getDownloadingInfo(messageID)
     }
   
     removeTempFile(messageID){
-        this.getTempFilestore();
-        this.tempStore.delete(messageID);
-    }
+        return new Promise((resolve, reject) => {
+            const executingFunc = async () => {
+                this.getTempFilestore();
+                await toPromise(this.tempStore.delete(messageID));
+            };
+
+        const onSuccess = () => resolve(true);
+        const onError = () => reject(false);
+
+        this.addAnExecution(executingFunc, onSuccess, onError);
+    });
+}
+    
+
+
+  commitTempFile(messageID){
+    return new Promise(async (resolve, reject) => {
+        const file = await this.readTempFile(messageID);
+        if(!file){ reject(ERROR_REASONS.TEMP_FILES.FILE_DOES_NOT_EXIST); return; }
+
+        // first execution - save the file
+        const saveExecution = async () => {
+            const {fileName, roomID, messageID, mimeType, chunks} = file;
+            const blob = new Blob(chunks, {type: mimeType});
+            await this.saveFile(`${messageID}-${fileName}`, blob);
+            try{
+                eventBus.emit(FILE_EVENTS.FILE_COMMITTED_TEMP_FILE, {messageID, mimeType, file: blob, fileName, roomID});
+            }catch(error){}
+        };
+
+        // second execution - delete the temp file
+        const deleteExecution = async () => {
+            this.getTempFilestore();
+            await toPromise(this.tempStore.delete(messageID));
+        };
+
+        const onSuccess = () => resolve(true);
+        const onError = () => resolve(false);
+
+        // add both independently to the queue 
+        this.addAnExecution(saveExecution, onSuccess, onError);
+        this.addAnExecution(deleteExecution, onSuccess, onError);
+    });
+}
+
+
+        // Security keys
+        async readSecurityKey(id){
+            return new Promise((resolve,reject) => {
+
+            if(this.dbOkay) {
+                const func = async () => {
+                    this.getSecurityKeyStore();
+                    const key = await toPromise(this.securityKeyStore.get(id));
+                    return key.target.result;
+                }
+
+                const onSuccess = (key) => {resolve(key)}
+                const onError = (error) => {resolve({error:ERROR_REASONS.SECURITY_KEY.READ_ERROR,lookUp:id})}
+                this.addAnExecution(func,onSuccess,onError)
+
+                }else{
+                    this.securityKeyRequests.push({id,callback:(event) => {
+                        resolve(event)
+                     }})
+                }
+            })
+        }
+
+        async saveSecurityKey(id,key){
+            return new Promise((resolve,reject) => {
+                const func = async () => {
+                    this.getSecurityKeyStore();
+                    await toPromise(this.securityKeyStore.put({id,key}));
+                    return
+                }
+
+                const onSuccess = (key) => {resolve(true)}
+                const onError = (error) => {resolve({error:ERROR_REASONS.SECURITY_KEY.FAILED_TO_WRITE,lookUp:id})}
+                this.addAnExecution(func,onSuccess,onError)
+            })
+        }
+
+
+
+
 
 }
 

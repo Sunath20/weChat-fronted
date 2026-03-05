@@ -27,17 +27,12 @@ import { initDataListener } from "./listeners/dataListener.js"
 import { resolveContacts, setChatVisibility, setContacts } from "./core/store.js"
 import { initUIListener } from "./listeners/uiListener.js"
 import { initClickListener } from "./listeners/clickListener.js"
+import { initDownloadListener } from "./listeners/downloadListener.js"
+import { cryptoHandler } from "./handlers/cryptoHandler.js"
 
 const {from} = getSelectedUsersID()
 
 
-initMessageListener()
-initDataListener()
-initVisualListener()
-initCallListener()
-initFileListener()
-initUIListener()
-initClickListener()
 
 if(!from){
     window.location.href = "/login.html"
@@ -56,6 +51,7 @@ const keyboardHandler = new KeyBoardHandler()
 
 const dataHandler = new DataHandler()
 const dateHandler = new DateHandler()
+
 
 
 
@@ -129,37 +125,41 @@ function selectClickedFriend(friendDetails){
     return () => {
 
         eventBus.emit(FRIEND_INTERACTIONS.FRIEND_SELECTED,friendDetails)
-        setChatVisibility(true)
-        // Set the visual setup for the friend
-        dataHandler.notifications[friendDetails.contact] = 0
+        cryptoHandler.loadFriendKey(friendDetails['contact']).then(e => {
+               
+            setChatVisibility(true)
+                // Set the visual setup for the friend
+                dataHandler.notifications[friendDetails.contact] = 0
 
-        // Get the messages from the storage
-        const currentMessages = dataHandler.getMessages(friendDetails['contact'])
-    
-        if(!currentMessages){
-             // Get the messages then add them base on who sent it
-                apiHandler.getMessagesOfTwoPersons(
-                    friendDetails['contact'],
-                    readData('userDetails')['contact']
-                ).then(e => e.json()).then(e => {
-                    if(!e)return;
-                    const msgs = dataHandler.reformatMessages(e.map(x => {
-                     const msgData =    new DataHandlerMessageModel(x)
-                     const fromUser = x['sentbyid'] !== friendDetails['contact']
-                     msgData.fromUser = fromUser;
-                     msgData.friend = friendDetails['contact']
-                     dataHandler.addMessage(msgData);
-                     return msgData
-                    }))
+                // Get the messages from the storage
+                const currentMessages = dataHandler.getMessages(friendDetails['contact'])
+            
+                if(!currentMessages){
+                    // Get the messages then add them base on who sent it
+                        apiHandler.getMessagesOfTwoPersons(
+                            friendDetails['contact'],
+                            readData('userDetails')['contact']
+                        ).then(e => e.json()).then(e => {
+                            if(!e)return;
+                            const msgs = dataHandler.reformatMessages(e.map(x => {
+                            const msgData =    new DataHandlerMessageModel(x)
+                            const fromUser = x['sentbyid'] !== friendDetails['contact']
+                            msgData.fromUser = fromUser;
+                            msgData.friend = friendDetails['contact']
+                            dataHandler.addMessage(msgData);
+                            return msgData
+                            }))
 
-                    
-                    const msgObject = dataHandler.groupMessagesBaseOnDate(msgs)
-                    visualHandler.addMessagesToTheView(msgObject)
-                })
-        }else{}
-        
-        chatHandler.currentMessageContacts[friendDetails.contact] = {}
-        query(".main-container").setAttribute("showMessages","true")
+                            
+                            const msgObject = dataHandler.groupMessagesBaseOnDate(msgs)
+                            visualHandler.addMessagesToTheView(msgObject)
+                        })
+                }else{}
+                
+                chatHandler.currentMessageContacts[friendDetails.contact] = {}
+                query(".main-container").setAttribute("showMessages","true")
+        })
+      
         
         // userConfigHandler.askIfFriendOnline(friendDetails['contact'])
         // userConfigHandler.sendMyOnlineStatus(friendDetails['contact'])
@@ -359,9 +359,35 @@ query(".go-back-to-friend-button").addEventListener('click',(event) => {
 //     userConfigHandler.askIfFriendOnline(to)
 // },10000)
 
-const selectedFriend = readData('selectedContactInfo')
-console.log("Okay now setting the friend",selectedFriend)
-if(selectedFriend){
-    selectClickedFriend(selectedFriend)()
+
+// visualHandler.initPreviousDownloads()
+
+
+async function initApp(){
+    try{
+        await fileHandler.init();
+        await cryptoHandler.init();
+
+        initMessageListener();
+        initDataListener();
+        initVisualListener();
+        initCallListener();
+        initFileListener();
+        initUIListener();
+        initClickListener();
+        initDownloadListener();
+
+
+    const selectedFriend = readData('selectedContactInfo')
+    console.log("Okay now setting the friend",selectedFriend)
+    if(selectedFriend){
+        selectClickedFriend(selectedFriend)()
+    }
+
+    }catch(error){
+        console.error("Failed to initialize app", error);
+        // show error banner to user
+    }
 }
-visualHandler.initPreviousDownloads()
+
+initApp();
