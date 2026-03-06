@@ -8,6 +8,7 @@ import { SendMessageDeliveredPayload } from "../clientPayloads.js"
 import { DateHandler } from "./dateHandler.js"
 import { eventBus } from "../core/EventBus.js"
 import { MAIN_HANDLERS, MESSAGE_TYPES,CALL_TYPES,FILE_TYPES,USER_HANDLES, FILE_EVENTS, ERRORS } from "../core/Actions.js"
+import {cryptoHandler} from "./cryptoHandler.js";
 
 
 
@@ -136,11 +137,13 @@ export class WebSocketHandler {
      * @param {String} message  - Message you wanna send
      * @param {String} to - contact number of the person 
      */
-    sendTextMessage(message,to){
+    async sendTextMessage(message,to){
+        const key = await cryptoHandler.loadFriendKey(to);
+        const encryptedMessage = await cryptoHandler.encryptMessage(message,key)
         const data = {
             mainHandler:MAIN_HANDLERS.MESSAGE,
             handlerOne:MESSAGE_TYPES.SEND,
-            message:message,
+            message:JSON.stringify(encryptedMessage),
             to:to,
             from:this.userDetails.contact
         }
@@ -380,7 +383,7 @@ export class MessageHandler {
          inputPayload.time = time
          inputPayload.to = friend
          inputPayload.messageID = messageID
-         this.webSocketHandler.socket.send(JSON.stringify(inputPayload))
+        webSocketHandler.socket.send(JSON.stringify(inputPayload))
     }
 
 
@@ -399,6 +402,7 @@ export class UserConfigHandler {
         this.handlers = {
             [USER_HANDLES.RECEIVE_FRIEND_IS_ONLINE]:this.receiveIfFriendIsOnline.bind(this)
         }
+        this.interval = null
     }
 
     /**
@@ -451,7 +455,8 @@ export class UserConfigHandler {
             contact
         }
 
-        this.webSocketHandler.sendData(JSON.stringify(payload))
+
+        webSocketHandler.sendData(JSON.stringify(payload))
     }
 
     receiveIfFriendIsOnline(payload){
@@ -461,7 +466,7 @@ export class UserConfigHandler {
         if(online && to===contact){
             this.visualHandler.setCurrentFriendStatus("Online")
         }else{
-            
+
             this.visualHandler.setCurrentFriendStatus(lastOnlineAt ? this.dateHandler.convertToLastSeenAt(lastOnlineAt) : "Offline")
         }
     }
@@ -474,8 +479,21 @@ export class UserConfigHandler {
             to,
             online
         }
-        this.webSocketHandler.sendData(JSON.stringify(payload))
+      webSocketHandler.sendData(JSON.stringify(payload))
     }
+
+
+    askForFriendStatus(contact){
+        if(this.interval != null){
+            clearInterval(this.interval);
+        }
+
+        this.interval = setInterval(()=>{
+            this.askIfFriendOnline(contact)
+            this.sendMyOnlineStatus(contact)
+        },2000)
+    }
+
 
 
 }
@@ -838,6 +856,41 @@ export class APIHandler {
 
     getServerBase(){return this.serverBase}
 
+
+    async  uploadProfilePic(file){
+        const compressed = await this.compressImage(file);
+
+        const formData = new FormData();
+        formData.append('profilePic', compressed, 'profile.jpg');
+        formData.append('userID', JSON.parse(localStorage.getItem('userDetails')).contact);
+        const base = this.getServerBase();
+        const url = new URL(`${base}/users/update-user-profile`);
+        url.searchParams.set('userID', JSON.parse(localStorage.getItem('userDetails')).contact);
+        const response = await fetch(url.toString(), {
+            method: 'POST',
+            body: formData
+        });
+
+        return response.json();
+    }
+
+
+    async  compressImage(file, maxWidth=200, maxHeight=200){
+        return new Promise((resolve) => {
+            const img = document.createElement('img');
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            img.onload = () => {
+                canvas.width = maxWidth;
+                canvas.height = maxHeight;
+                ctx.drawImage(img, 0, 0, maxWidth, maxHeight);
+                canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.8);
+            }
+
+            img.src = URL.createObjectURL(file);
+        });
+    }
 
 }
 

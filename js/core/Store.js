@@ -89,7 +89,6 @@ reformatMessages()
 
 export const store = new Store({
   activeChat: null,
-  messages: readData('messages') || [],
   contacts: readData('contacts') || [],
   connection: {},
   currentUser:readData('userDetails'),
@@ -151,48 +150,48 @@ export function addLoadedMessagesToStore(payload){
   return {messages:mappedMessages,contact};
 }
 
-export function addMessages(payload){
-  try{
-      const messages = Array.isArray(payload) ? payload : [payload]
-      const {currentUser} = store.getState()
+// export function addMessages(payload){
+//   try{
+//       const messages = Array.isArray(payload) ? payload : [payload]
+//       const {currentUser} = store.getState()
 
-      const mappedMessages = tagBaseOnDate(messages.map(e => {
-    const msg = new DataHandlerMessageModel(e)
-    msg.fromUser = msg.sentById === currentUser.contact
-    msg.friend = msg.fromUser ? e.to : e.from
+//       const mappedMessages = tagBaseOnDate(messages.map(e => {
+//     const msg = new DataHandlerMessageModel(e)
+//     msg.fromUser = msg.sentById === currentUser.contact
+//     msg.friend = msg.fromUser ? e.to : e.from
 
-    return msg;
+//     return msg;
 
-      }),false)
+//       }),false)
   
 
-  store.setState((state) => {
-    const messages = state.messages;
+//   store.setState((state) => {
+//     const messages = state.messages;
 
-    mappedMessages.forEach(e => {
-        const {friend,dateTag} = e;
-        let userMessages = messages[friend]
-        if(!userMessages)userMessages={}
-        let dateMessages = userMessages[dateTag]
-        if(!dateMessages)dateMessages=[]
-        dateMessages.push(e)
-        userMessages[dateTag] = dateMessages
+//     mappedMessages.forEach(e => {
+//         const {friend,dateTag} = e;
+//         let userMessages = messages[friend]
+//         if(!userMessages)userMessages={}
+//         let dateMessages = userMessages[dateTag]
+//         if(!dateMessages)dateMessages=[]
+//         dateMessages.push(e)
+//         userMessages[dateTag] = dateMessages
 
-        state.messages[friend] = userMessages
-    })
+//         state.messages[friend] = userMessages
+//     })
 
-    return state
-  })
+//     return state
+//   })
 
-  saveData('messages',store.getState().messages)
+//   saveData('messages',store.getState().messages)
  
-  return mappedMessages
+//   return mappedMessages
 
-  }catch(error){
-    console.error(error)
-  }
+//   }catch(error){
+//     console.error(error)
+//   }
 
-}
+// }
 
 export function addNewMessageToStore(payload,friend=null){
     const msg = new DataHandlerMessageModel(payload)
@@ -409,10 +408,7 @@ export function setCurrentRoomID(roomID){
   })
 }
 
-export function resolveMessages(contact){
-  const messages = store.getState()['messages']
-  return messages[contact] || []
-}
+
 
 export function addNotDeliveredMessages(payload){
   const {messages,contact}  = payload

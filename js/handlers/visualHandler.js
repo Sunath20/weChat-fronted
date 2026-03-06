@@ -7,10 +7,10 @@ import { Notification, setNotificationsToZero } from "./notification.js";
 import { TabHandler } from "./tabHandler.js";
 import { MAIN_HANDLERS, MESSAGE_TYPES,CALL_TYPES,FILE_TYPES,USER_HANDLES, VISUAL_EVENTS, FILE_EVENTS, REGISTER_EVENTS, CLICK_EVENTS, DOWNLOAD_INTERACTIONS } from "../core/Actions.js"
 import { getToday, tagBaseOnDate, todayAsEasyViewFormat } from "../utils/dateUtils.js";
-import { getDownloadingFilesMeta, getDownloadingInfo, resolveContacts, resolveNotifications } from "../core/store.js";
+import { getDownloadingFilesMeta, getDownloadingInfo, resolveContacts, resolveNotifications } from "../core/Store.js";
 import { apiHandler } from "./requestHandling.js";
 import { messageListToDateBase } from "../utils/dataFormatting.js";
-import { DOWNLOADING_STATUS } from "../core/DownloadManager.js";
+import {DOWNLOADING_STATUS, SERVER_BASE} from "../core/DownloadManager.js";
 // import UIkit from "../lib/uikit.js"
 
 // Message List
@@ -385,6 +385,7 @@ export class VisualHandler {
     showNewsMessageNotification(friend,count) {
         const notificationSpan =  query(`.friend-notification-counter[contact="${friend}"]`)
         const numberOfNotifications = 1
+        if(!notificationSpan){return;}
         notificationSpan.setAttribute('notifications',count)
         notificationSpan.innerText = `${count}` 
     }
@@ -810,7 +811,19 @@ export class VisualHandler {
         const container = document.querySelector(SELECTED_PERSON_INFO_CLS)  
         const nameSpan = container.querySelector(".text-info > span")
         nameSpan.innerText = friendDetails['name']
-        
+
+
+            try{
+                fetch(SERVER_BASE+"/users/pic/"+friendDetails['contact']).then(async e => {
+                    if(e.status === 404){return;}
+               const file =  await e.blob();
+                query(".user-profile-picture-image").src = URL.createObjectURL(file);
+                })
+
+            }catch (e){
+
+            }
+
     }
 
 
@@ -967,6 +980,29 @@ export class VisualHandler {
                 this.updateDownloadingMetaInfo({messageID,downloaded,fileSize})
             }
         }
+    }
+
+
+    // in visualHandler.js
+
+    showChatLoading(){
+        const chatInfo = query(MESSAGE_LIST_CLS_NAME);
+        const loader = document.createElement('div');
+        loader.className = 'chat-loading-overlay';
+        loader.id = 'chat-loader';
+        loader.innerHTML = `
+        <div class="chat-loading-spinner">
+            <span uk-spinner="ratio: 2"></span>
+            <p>Loading messages...</p>
+        </div>
+    `;
+        console.log("adding it ",chatInfo,loader)
+        chatInfo.appendChild(loader);
+    }
+
+    hideChatLoading(){
+        const loader = document.getElementById('chat-loader');
+        if(loader) loader.remove();
     }
 
 }

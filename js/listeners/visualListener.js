@@ -1,20 +1,38 @@
-import { APP_INTERACTIONS, CALL_INTERACTIONS, CALL_TYPES, DATA_EVENTS, DOWNLOAD_EVENTS, DOWNLOAD_INTERACTIONS, FILE_EVENTS, FILE_INTERACTIONS, FRIEND_EVENTS, FRIEND_INTERACTIONS, MESSAGE_TYPES, STORE_EVENTS, UPLOAD_INTERACTIONS, VISUAL_EVENTS } from "../core/Actions.js";
+import {
+    APP_INTERACTIONS,
+    CALL_INTERACTIONS,
+    CALL_TYPES,
+    DATA_EVENTS,
+    DOWNLOAD_EVENTS,
+    DOWNLOAD_INTERACTIONS,
+    FILE_EVENTS,
+    FILE_INTERACTIONS,
+    FRIEND_EVENTS,
+    FRIEND_INTERACTIONS,
+    MESSAGE_TYPES,
+    STORE_EVENTS,
+    UPLOAD_INTERACTIONS,
+    USER_HANDLES,
+    VISUAL_EVENTS
+} from "../core/Actions.js";
 import { DOWNLOADING_STATUS } from "../core/DownloadManager.js";
 import { eventBus } from "../core/EventBus.js";
-import { addNewNotification, getCallingContact, resolveChatVisibility, resolveContacts, resolveCurrentUser, resolveMessages, resolveSelectedUser, store, updateMessageInStore } from "../core/store.js";
+import { addNewNotification, getCallingContact, resolveChatVisibility, resolveContacts, resolveCurrentUser, resolveSelectedUser, store, updateMessageInStore } from "../core/Store.js";
 import { FILE_INPUT_MODAL_TAG } from "../handlers/clickHandler.js";
 import { visualHandler } from "../handlers/visualHandler.js";
 import { DataHandlerMessageModel } from "../models.js";
 import { formatSavedMessages, messageListToDateBase } from "../utils/dataFormatting.js";
-import { tagBaseOnDate } from "../utils/dateUtils.js";
+import {convertToLastSeenAt, tagBaseOnDate} from "../utils/dateUtils.js";
 
 
 
 export function initVisualListener(){
     
     eventBus.on(STORE_EVENTS.MESSAGE_ADDED,message => {
+        console.log("Okay we gonne add this to the UI AT LAST ",message)
         const user = resolveSelectedUser()
-        if(user.contact === message.friend && resolveChatVisibility()){
+        console.log("WE gonna find the problem anyway there's no hiding ",user,user.contact === message.friend)
+        if(user.contact === message.friend){
             visualHandler.addOneToday(message)
             visualHandler.scrollToBottom()
         }else{
@@ -85,6 +103,7 @@ export function initVisualListener(){
     // Friends 
     eventBus.on(STORE_EVENTS.SELECTED_FRIEND_SET,payload => {
         visualHandler.renderSelectedFriend(payload)
+        visualHandler.clearChat();
     })
 
     eventBus.on(DATA_EVENTS.MESSAGES_ADD,payload => {
@@ -110,6 +129,12 @@ export function initVisualListener(){
     })
 
     eventBus.on(CALL_INTERACTIONS.START_AUDIO_CALL,payload => {
+        const data = resolveCurrentUser()
+        data['state'] = "calling"
+        visualHandler.initCallerDialogWithUserInfo(data)
+    })
+
+    eventBus.on(CALL_INTERACTIONS.VIDEO_CALL_START,payload => {
         const data = resolveCurrentUser()
         data['state'] = "calling"
         visualHandler.initCallerDialogWithUserInfo(data)
@@ -230,6 +255,23 @@ export function initVisualListener(){
     eventBus.on(DOWNLOAD_INTERACTIONS.REMOVE_DOWNLOAD,({messageID,fileName}) => {
         visualHandler.removeDownloadFromManager(messageID)
     })
+
+
+    eventBus.on(USER_HANDLES.RECEIVE_FRIEND_IS_ONLINE,payload => {
+        const {lastOnlineAt,online} = payload;
+        visualHandler.setCurrentFriendStatus(online ? "Online" : convertToLastSeenAt(lastOnlineAt));
+    })
+
+
+    eventBus.on(VISUAL_EVENTS.ADD_CHAT_LOADING_BANNER,(payload) => {
+        visualHandler.renderSelectedFriend(payload)
+        visualHandler.showChatLoading();
+    })
+
+    eventBus.on(VISUAL_EVENTS.REMOVE_CHAT_LOADING_BANNER,() => {
+        visualHandler.hideChatLoading()
+    })
+
 
     
     

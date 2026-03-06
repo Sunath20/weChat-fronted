@@ -402,14 +402,12 @@ export class WebFileHandler extends FileHandler {
 }
 
     addAnExecution(func,onSuccess,onError){
-        console.log("New execution added ")
         this.executions.push({func,onSuccess,onError});
         this._execute();
     }
 
 
     _execute(){
-        console.log("Is exectuting a one ",this.executing)
         function resetExecution(){
             this.executing = false;
         }
@@ -417,24 +415,16 @@ export class WebFileHandler extends FileHandler {
         const reset = resetExecution.bind(this);
 
         if(this.executing){return;}
-        if(this.executions.length != 0 ){
+        if(this.executions.length !== 0 ){
             const {func,onSuccess,onError} = this.executions.shift();
             this.executing = true;
-            // console.log("We got here too we set the execution to the true",func)
             func().then(e => {
-                // console.log("Trying to reset")
-                // reset();
-                // this._execute();
                 onSuccess(e);
             }).catch(error => {
                 console.error(error)
-                // console.log("Failed to resert",error)
-                // reset();
-                // this._execute()
                 onError(error)
             }).finally( () => {
                 reset();
-                // console.log("Finally set it to false",this.executing,this._execute)
                 this._execute();
             });
         }
@@ -478,13 +468,11 @@ export class WebFileHandler extends FileHandler {
      */
     async readTempFile(filePath){
         return new Promise( async (resolve,reject)  => {
-            console.log("Is my db okay ",this.dbOkay)
         if(this.dbOkay){
         
             const executingFunc = async () => {
             this.getTempFilestore();
             const result = await toPromise(this.tempStore.get(filePath));
-            console.log("Here is the file result ",result)
             return result.target.result;
         };
 
@@ -513,12 +501,10 @@ export class WebFileHandler extends FileHandler {
 
     async retrieveFilePausedFromServer(roomID,messageID,fileName,downloadedSize,mimeType,downloadingCallback=(chunks)=>{},signal=null){
         const callback = this.downloadingCallback(messageID,downloadingCallback).bind(this);
-        // console.log(fileName,"Why is this undefined ")
         const response = await super.retrieveFilePausedFromServer(roomID,messageID,fileName,downloadedSize,mimeType,callback,signal=null)
 
         try{
             const file = await this.readTempFile(messageID)
-            // console.log(file,"This is the thing gonna convert")
             const blob = new Blob(file.chunks,{type:mimeType});
             eventBus.emit(DOWNLOAD_EVENTS.DOWNLOAD_FINISH,{mimeType,messageID,fileName,file:blob})
         }catch(error){

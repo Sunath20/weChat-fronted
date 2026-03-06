@@ -5,7 +5,7 @@ import { DateHandler } from "./dateHandler.js"
 import { APIHandler, WebSocketHandler } from "./requestHandling.js";
 import { VisualHandler } from "./visualHandler.js";
 import { apiHandler } from "./requestHandling.js";
-import { resolveContacts, resolveCurrentUser, resolveMessages, resolveSelectedUser } from "../core/store.js";
+import { resolveContacts, resolveCurrentUser, resolveSelectedUser } from "../core/Store.js";
 
 
 /**

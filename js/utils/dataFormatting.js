@@ -1,25 +1,29 @@
 import { DataHandlerMessageModel, FormattedDataHandlerMessageModel } from "../models.js";
 import { tagBaseOnDate } from "./dateUtils.js";
 
-export function formatSavedMessages(messages){;
+export function formatSavedMessages(messages){
 
-   const dateKeys = Object.keys(messages)
-   dateKeys.forEach(e => {
-        messages[e] = tagBaseOnDate(messages[e].map(x => {
+    const mappedMessages = tagBaseOnDate(messages.map(x => {
            return new DataHandlerMessageModel(x)
         }),false).map(e => {
             return new FormattedDataHandlerMessageModel(e)})
-   })
 
-    return messages;
+    const obj = {}
+    for(let i = 0 ; i < mappedMessages.length; i++){
+        if(!obj[mappedMessages[i]['dateTag']]){
+            obj[mappedMessages[i]['dateTag']] = [mappedMessages[i]];
+        }else{
+            obj[mappedMessages[i]['dateTag']].push(mappedMessages[i]);
+        }
+    }
+
+    return obj;
 }
 
 export function messageListToDateBase(messages){
    const msgOBJ = {}
-   console.log(messages,"Gonna format them")
    for(let i = 0 ; i < messages.length;i++){
       const {dateTag} = messages[i]
-      console.log(messages[i])
       if(!msgOBJ[dateTag]){
          msgOBJ[dateTag] = []
       }

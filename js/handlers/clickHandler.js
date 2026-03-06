@@ -74,6 +74,9 @@ const DOWNLOAD_MANAGER_MAXIMIZE_BTN = ".dm-btn.maximize"
 const DOWNLOAD_MANAGER_MINIMIZE_BTN  = ".dm-btn.minimize"
 
 
+// NEW PROFILE PICTURE UPLOADING
+const NEW_PROFILE_PICTURE_SAVE_BTN_CLS_NAME = ".save-new-profile-picture-btn"
+
 export class UIClickHandler extends ClickHandler {
 
     constructor(){
@@ -166,6 +169,10 @@ export class UIClickHandler extends ClickHandler {
         // Settings
         this.setOnClick(query(SETTING_CLOSE_BUTTON_CLS_NAME),this.closeSettingsTab)
         this.setOnClick(query(SETTING_OPEN_BUTTON_CLS_NAME),this.openSettingsTab)
+
+
+        // Profile Picture Settings
+        this.setOnClick(query(NEW_PROFILE_PICTURE_SAVE_BTN_CLS_NAME),this.updateProfilePic)
     }
     
     onFileMenuClick(){
@@ -227,11 +234,12 @@ async onUploadAllFileClicked(event){
      */
     async onVideoCallButtonClick(event){
 
-            const data = readData('selectedContactInfo')
-            data['state'] = "Calling..."
-            const stream = await navigator.mediaDevices.getUserMedia({video:true,audio:false})
-            await this.callHandler.initCall(stream)
-            this.visualHandler.initCallerDialogWithUserInfo(data)
+            eventBus.emit(CALL_INTERACTIONS.VIDEO_CALL_START)
+            // data['state'] = "Calling..."
+            // const stream = await navigator.mediaDevices.getUserMedia({video:true,audio:false})
+            // await callHandler.initCall(stream)
+            // visualHandler.initCallerDialogWithUserInfo(data)
+
     }
 
     /**
@@ -313,7 +321,6 @@ async onUploadAllFileClicked(event){
     }
 
     maximizeDownloadManager(event){
-        console.log("Okay finnaly working")
         eventBus.emit(DOWNLOAD_INTERACTIONS.SHOW_FULL_MANAGER)
     }
 
@@ -321,6 +328,12 @@ async onUploadAllFileClicked(event){
         eventBus.emit(DOWNLOAD_INTERACTIONS.MINIMIZE_DOWNLOAD_MANAGER)
     }
 
+
+    updateProfilePic(event){
+        console.log("Start uploading the file")
+        event.preventDefault();
+        eventBus.emit(UPLOAD_INTERACTIONS.START_UPLOAD_PROFILE_PICTURE)
+    }
 
 }
 

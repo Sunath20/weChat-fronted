@@ -55,7 +55,8 @@ export const CALL_INTERACTIONS = {
     START_AUDIO_CALL:"call_start_audio_call",
     CLOSE_CALL_FINISHED_DIALOG:"call_interaction_close_call_finished_dialog",
     CANCEL_AUDIO_ONLY_CALL:"call_int_cancel_audio_only_call",
-    CANCEL_CALL:"call_int_cancel"
+    CANCEL_CALL:"call_int_cancel",
+    VIDEO_CALL_START:"call:video-call-start"
 }
 
 export const CALL_EVENTS = {
@@ -83,7 +84,9 @@ export const STORE_EVENTS = {
 
 export const VISUAL_EVENTS = {
     MESSAGE_HAS_BEEN_READ_BY_USER:"VISUAL_MESSAGE_HAS_BEEN_READ_BY_USER",
-    ADD_NEW_MESSAGE_BY_USER:"VISUAL_ADD_NEW_MESSAGE_BY_USER"
+    ADD_NEW_MESSAGE_BY_USER:"VISUAL_ADD_NEW_MESSAGE_BY_USER",
+    ADD_CHAT_LOADING_BANNER:"ADD_CHAT_LOADING_BANNER",
+    REMOVE_CHAT_LOADING_BANNER:"REMOVE_CHAT_LOADING_BANNER"
 }
 
 export const CLICK_EVENTS = {
@@ -199,7 +202,8 @@ export const DOWNLOAD_INTERACTIONS = {
 
 export const UPLOAD_INTERACTIONS = {
     SHOW_UPLOAD_MODAL:"upload_interactions_show_upload_modal",
-    CLOSE_UPLOAD_MODAL:"upload_interactions_close_upload_modal"
+    CLOSE_UPLOAD_MODAL:"upload_interactions_close_upload_modal",
+    START_UPLOAD_PROFILE_PICTURE:"upload:start-profile-picture"
 }
 
 
@@ -227,3 +231,4 @@ export const ERROR_REASONS = {
         FAILED_TO_WRITE:"security:key-written-failed"
     }
 }
+

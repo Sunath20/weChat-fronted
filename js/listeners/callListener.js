@@ -1,5 +1,5 @@
 import {eventBus} from "../core/EventBus.js"
-import {CALL_INTERACTIONS, CALL_TYPES, CLICK_EVENTS, STORE_EVENTS} from "../core/Actions.js"
+import {CALL_EVENTS, CALL_INTERACTIONS, CALL_TYPES, CLICK_EVENTS, STORE_EVENTS} from "../core/Actions.js"
 import {VisualHandler} from "../handlers/visualHandler.js"
 import { callHandler , CallHandler } from "../handlers/callHandler.js"
 import { getCallingContact, resolveCallingContact, setCallingContact, store } from "../core/store.js"
@@ -46,6 +46,10 @@ export function initCallListener(cH=callHandler){
 
     eventBus.on(CALL_INTERACTIONS.CANCEL_CALL,payload => {
         callHandler.closeCall()
+    })
+
+    eventBus.on(CALL_INTERACTIONS.VIDEO_CALL_START,async payload => {
+        await callHandler.initCall(false)
     })
 
 

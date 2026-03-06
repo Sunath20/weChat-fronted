@@ -120,6 +120,59 @@ class CryptoHandler {
 }
 
 
+    async deriveSharedKey(friendPublicKey){
+        const sharedKey = await window.crypto.subtle.deriveKey(
+            {
+                name: "ECDH",
+                public: friendPublicKey
+            },
+            this.privateKey,
+            {
+                name: "AES-GCM",
+                length: 256
+            },
+            false,
+            ["encrypt", "decrypt"]
+        );
+        return sharedKey;
+    }
+
+    async encryptMessage(message, friendPublicKey){
+        const sharedKey = await this.deriveSharedKey(friendPublicKey);
+        const iv = window.crypto.getRandomValues(new Uint8Array(12));
+        const encodedMessage = new TextEncoder().encode(message);
+
+        const encrypted = await window.crypto.subtle.encrypt(
+            { name: "AES-GCM", iv },
+            sharedKey,
+            encodedMessage
+        );
+
+        const ivString = btoa(String.fromCharCode(...iv));
+        const dataString = btoa(String.fromCharCode(...new Uint8Array(encrypted)));
+
+        return {
+            iv: ivString,
+            data: dataString
+        };
+    }
+
+    async decryptMessage(encryptedPayload, friendPublicKey){
+        const sharedKey = await this.deriveSharedKey(friendPublicKey);
+
+        const iv = new Uint8Array(atob(encryptedPayload.iv).split('').map(c => c.charCodeAt(0)));
+        const data = new Uint8Array(atob(encryptedPayload.data).split('').map(c => c.charCodeAt(0)));
+
+        const decrypted = await window.crypto.subtle.decrypt(
+            { name: "AES-GCM", iv },
+            sharedKey,
+            data
+        );
+
+        return new TextDecoder().decode(decrypted);
+    }
+
+
 
 }
 

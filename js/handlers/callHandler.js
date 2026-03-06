@@ -1,6 +1,6 @@
 import { getSelectedUsersID, query, readData } from "../utils.js";
 import { DataHandler } from "./dataHandler.js";
-import {WebSocketHandler } from "./requestHandling.js";
+import {webSocketHandler, WebSocketHandler} from "./requestHandling.js";
 import { VisualHandler } from "./visualHandler.js";
 import { MAIN_HANDLERS, MESSAGE_TYPES,CALL_TYPES,FILE_TYPES,USER_HANDLES, CALL_EVENTS } from "../core/Actions.js"
 import { eventBus } from "../core/EventBus.js";
@@ -91,7 +91,7 @@ export class CallHandler {
         this.from = from;
         this.to = to;
         this.onlyAudio = onlyAudio;
-        const stream = await navigator.mediaDevices.getUserMedia({video:true})
+        const stream = await navigator.mediaDevices.getUserMedia({video:!onlyAudio,audio:true})
         this.localStream = stream;
 
         this.peerConnection = new RTCPeerConnection(CALL_CONFIGURATION)
@@ -131,7 +131,7 @@ export class CallHandler {
                     to:this.to
                 }
                 
-                this.webSocketHandler.sendData(JSON.stringify(payload))
+              webSocketHandler.sendData(JSON.stringify(payload))
             }
         }
         )

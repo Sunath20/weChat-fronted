@@ -12,7 +12,18 @@ import { Notification, setNotificationsToZero } from "./handlers/notification.js
 import {WebSocketHandler,MessageHandler,APIHandler, UserConfigHandler} from "./handlers/requestHandling.js"
 import {VisualHandler} from "./handlers/visualHandler.js"
 import { DatabaseMessageModel, DataHandlerMessageModel } from "./models.js"
-import { MAIN_HANDLERS, MESSAGE_TYPES,CALL_TYPES,FILE_TYPES,USER_HANDLES, FILE_INTERACTIONS, FRIEND_INTERACTIONS, APP_EVENTS, MESSAGE_INTERACTIONS } from "./core/Actions.js"
+import {
+    MAIN_HANDLERS,
+    MESSAGE_TYPES,
+    CALL_TYPES,
+    FILE_TYPES,
+    USER_HANDLES,
+    FILE_INTERACTIONS,
+    FRIEND_INTERACTIONS,
+    APP_EVENTS,
+    MESSAGE_INTERACTIONS,
+    VISUAL_EVENTS
+} from "./core/Actions.js"
 
 import { getContacts, getSelectedUsersID, println, query, readData } from "./utils.js"
 import { initMessageListener } from "./listeners/messageListener.js"
@@ -29,6 +40,7 @@ import { initUIListener } from "./listeners/uiListener.js"
 import { initClickListener } from "./listeners/clickListener.js"
 import { initDownloadListener } from "./listeners/downloadListener.js"
 import { cryptoHandler } from "./handlers/cryptoHandler.js"
+import {messageDB} from "./core/MessageDB.js";
 
 const {from} = getSelectedUsersID()
 
@@ -55,56 +67,6 @@ const dateHandler = new DateHandler()
 
 
 
-
-
-
-
-
-// Setting each handler one to another
-// messageHandler.setChatHandler(chatHandler);
-// messageHandler.setAPIHandler(apiHandler);
-// messageHandler.setDataHandler(dataHandler)
-// messageHandler.setVisualHandler(visualHandler)
-// messageHandler.setWebSocketHandler(webSocket)
-
-// visualHandler.setChatHandler(chatHandler)
-// visualHandler.setNotificationHandler(notification)
-// visualHandler.setDataHandler(dataHandler)
-// visualHandler.setFileHandler(fileHandler)
-
-// chatHandler.setDataHandler(dataHandler)
-// chatHandler.setVisualHandler(visualHandler)
-// chatHandler.setWebSocketHandler(webSocket)
-
-
-// dataHandler.setDateHandler(dateHandler)
-// dataHandler.setAPIHAndler(apiHandler)
-// dataHandler.setWebSocketHandler(webSocket)
-// dataHandler.setVisualHandler(visualHandler)
-
-// fileHandler.setAPIHandler(apiHandler)
-// fileHandler.setDataHandler(dataHandler)
-// fileHandler.setVisualHandler(visualHandler)
-// fileHandler.setWebSocketHandler(webSocket)
-
-
-// clickHandler.setVisualHandler(visualHandler)
-// clickHandler.setFileHandler(fileHandler)
-// clickHandler.setCallHandler(callHandler)
-
-
-// callHandler.setWebSocketHandler(webSocket);
-// callHandler.setVisualHandler(visualHandler)
-// callHandler.setDataHandler(dataHandler)
-
-
-// userConfigHandler.setWebSocketHandler(webSocket)
-// userConfigHandler.setVisualHandler(visualHandler)
-// userConfigHandler.setDataHandler(dataHandler)
-// userConfigHandler.setDateHandler(dateHandler)
-
-
-
 // Passing arguments
 const CHAT_SEND_TEXT_INPUT_CLS_NAME = ".text-input"
 keyboardHandler.setElement(query(CHAT_SEND_TEXT_INPUT_CLS_NAME))
@@ -116,53 +78,47 @@ keyboardHandler.setElement(query(CHAT_SEND_TEXT_INPUT_CLS_NAME))
 const contacts = dataHandler.contacts;
 visualHandler.contacts = contacts;
 
-// webSocket.setMainHandler(MAIN_HANDLERS.MESSAGE,messageHandler)
-// webSocket.setMainHandler(MAIN_HANDLERS.CALL,callHandler)
-// webSocket.setMainHandler(MAIN_HANDLERS.USER_CONFIG,userConfigHandler)
 
 
 function selectClickedFriend(friendDetails){
     return () => {
 
-        eventBus.emit(FRIEND_INTERACTIONS.FRIEND_SELECTED,friendDetails)
-        cryptoHandler.loadFriendKey(friendDetails['contact']).then(e => {
-               
-            setChatVisibility(true)
+        const loader = document.createElement('div');
+        loader.className = 'chat-loading-overlay';
+        loader.id = 'chat-loader';
+        loader.innerHTML = `
+        <div class="chat-loading-spinner">
+            <span uk-spinner="ratio: 2"></span>
+            <p>Loading messages...</p>
+        </div>
+    `;
+        query(".chat-info").append(loader)
+
+        try{
+            cryptoHandler.loadFriendKey(friendDetails['contact']).then(async e => {
+
+                setChatVisibility(true)
                 // Set the visual setup for the friend
                 dataHandler.notifications[friendDetails.contact] = 0
 
                 // Get the messages from the storage
-                const currentMessages = dataHandler.getMessages(friendDetails['contact'])
-            
-                if(!currentMessages){
-                    // Get the messages then add them base on who sent it
-                        apiHandler.getMessagesOfTwoPersons(
-                            friendDetails['contact'],
-                            readData('userDetails')['contact']
-                        ).then(e => e.json()).then(e => {
-                            if(!e)return;
-                            const msgs = dataHandler.reformatMessages(e.map(x => {
-                            const msgData =    new DataHandlerMessageModel(x)
-                            const fromUser = x['sentbyid'] !== friendDetails['contact']
-                            msgData.fromUser = fromUser;
-                            msgData.friend = friendDetails['contact']
-                            dataHandler.addMessage(msgData);
-                            return msgData
-                            }))
+                // const currentMessages = dataHandler.getMessages(friendDetails['contact'])
+                const lastMessage = await messageDB.getLastMessage(friendDetails['contact'])
 
-                            
-                            const msgObject = dataHandler.groupMessagesBaseOnDate(msgs)
-                            visualHandler.addMessagesToTheView(msgObject)
-                        })
-                }else{}
-                
-                chatHandler.currentMessageContacts[friendDetails.contact] = {}
+
                 query(".main-container").setAttribute("showMessages","true")
-        })
-      
-        
-        // userConfigHandler.askIfFriendOnline(friendDetails['contact'])
-        // userConfigHandler.sendMyOnlineStatus(friendDetails['contact'])
+            }).catch(error => {
+                console.error(error)
+            }).finally(e => {
+                query(".chat-loading-overlay")?.remove()
+                eventBus.emit(FRIEND_INTERACTIONS.FRIEND_SELECTED,friendDetails)
+            })
+
+            userConfigHandler.askForFriendStatus(friendDetails['contact']);
+        }catch (error){
+            query(".chat-loading-overlay").remove()
+        }
+
     }
 }
 
@@ -181,8 +137,7 @@ function sendTextMessageAction(){
         const input = query(SEND_MSG_INPUT_CLS_NAME);
         webSocket.sendTextMessage(input.value,user.contact)
         input.value = ``
-    })
-        }
+    })}
 
      
 
@@ -238,8 +193,6 @@ keyboardHandler.setOnEnter((event) => {
         webSocket.sendTextMessage(input.value,user.contact)
         const data = {message:input.value}
         input.value = ``
-        
-        
 })
 
 
@@ -367,6 +320,7 @@ async function initApp(){
     try{
         await fileHandler.init();
         await cryptoHandler.init();
+        await messageDB.init();
 
         initMessageListener();
         initDataListener();

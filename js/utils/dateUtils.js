@@ -66,19 +66,6 @@ export function addZeroIf(num){
         return num
     }
 
-export function convertToLastSeenAt(date){
-        const today = this.getToday()
-        const formattedDate = (new Date(date))
-        const time = formattedDate.getTime()
-        const yesterday = this.getYesterday(today)
-        if( today <= time){
-            return this.addZeroIf(formattedDate.getHours()) + ":" + this.addZeroIf(formattedDate.getMinutes()) +" Today"
-        }else if(yesterday <= time <today){
-            return this.addZeroIf(formattedDate.getHours()) + ":" + this.addZeroIf(formattedDate.getMinutes()) +" Yesterday"
-        }else{
-            return "Offline"
-        }
-    }
 
 export function getToday(){
         const time = Date.now()
@@ -103,4 +90,29 @@ export function todayAsEasyViewFormat(){
     const year = time.getFullYear()
 
     return date + "/" + month + "/" + year
+}
+
+
+export function convertToLastSeenAt(lastSeenAt){
+    const date = new Date(lastSeenAt);
+    const now = new Date();
+
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if(diffMins < 1){
+        return "Last seen just now";
+    }else if(diffMins < 60){
+        return `Last seen ${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+    }else if(diffHours < 24){
+        return `Last seen ${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    }else if(diffDays === 1){
+        return `Last seen yesterday at ${date.getHours().toString().padStart(2,'0')}:${date.getMinutes().toString().padStart(2,'0')}`;
+    }else if(diffDays < 7){
+        return `Last seen ${diffDays} days ago`;
+    }else{
+        return `Last seen on ${date.toLocaleDateString()}`;
+    }
 }
